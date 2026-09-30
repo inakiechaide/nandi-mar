@@ -15,14 +15,14 @@ export const CONFIG = {
       "Hoy mi trabajo une esas raíces: conciertos ceremoniales, círculos de mujeres, retiros y sesiones donde el sonido y el movimiento consciente abren lugar para descansar, sentir y recordar."
     ],
     quote: "No vengo a enseñarte nada nuevo. Vengo a acompañarte a recordar lo que tu cuerpo ya sabe.",
-    image: { src: "", alt: "Retrato de Nandi Mar con tambor chamánico", tone: "fuego" }
+    image: { src: "img/IMG_0687.jpg", alt: "Retrato de Nandi Mar con tambor chamánico", tone: "fuego" }
   },
   areas: [
     {
       id: "musica", navLabel: "Música", title: "Música", accent: "ocre",
       subtitle: "Cantos de raíz para despertar la memoria",
       description: "Canciones nacidas del monte, el río y la ceremonia. Voz, tambor, charango y cuencos se entrelazan en un repertorio propio y en cantos de tradición que honran a la tierra y a quienes la habitan.",
-      image: { src: "", alt: "Tambor y charango sobre una manta tejida", tone: "tierra" },
+      image: { src: "img/IMG_0688.jpg", alt: "Tambor y charango sobre una manta tejida", tone: "tierra" },
       offerings: [
         { title: "Raíz de Agua", meta: "Álbum • 2026", text: "Nueve canciones grabadas en vivo en la sierra, con voz, guitarra y tambores de agua." },
         { title: "Conciertos ceremoniales", meta: "90 min • de 20 a 150 personas", text: "Un recorrido de cantos para escuchar con todo el cuerpo, en salas, casas culturales y espacios abiertos." },
