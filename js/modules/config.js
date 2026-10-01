@@ -92,7 +92,7 @@ export const CONFIG = {
     { name: "Email", url: "mailto:hola@nandimar.com", icon: "email" }
   ],
   newsletter: {
-    title: "Carta de luna", label: "Tu email", placeholder: "tu@email.com", button: "Suscribirme", sending: "Enviando…",
+    email: "TU_EMAIL@gmail.com", title: "Carta de luna", label: "Tu email", placeholder: "tu@email.com", button: "Suscribirme", sending: "Enviando…",
     success: "Gracias por sumarte. La próxima carta de luna llega a tu bandeja.",
     error: "Ingresá un email válido, por ejemplo nombre@dominio.com.",
     note: "Una carta por luna. Sin spam; podés darte de baja cuando quieras."

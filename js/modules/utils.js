@@ -61,7 +61,22 @@ export const navItems = () => [
 export const lockScroll = on => document.documentElement.classList.toggle("is-locked", on);
 
 async function onSubscribe(email) {
-  return new Promise(resolve => setTimeout(resolve, 600));
+  const subject = encodeURIComponent("Suscripción — Carta de luna");
+
+  const body = encodeURIComponent(
+    `Hola,
+
+Quiero suscribirme a la Carta de luna.
+
+Mi email es: ${email}
+
+Gracias.`
+  );
+
+  window.location.href =
+    `mailto:${CONFIG.newsletter.email}?subject=${subject}&body=${body}`;
+
+  return true;
 }
 
 export { onSubscribe };
