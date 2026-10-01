@@ -68,7 +68,7 @@ export const CONFIG = {
         { title: "Sesiones privadas", meta: "60 min • cuencos sobre el cuerpo", text: "Un tratamiento individual para soltar tensión, dormir mejor y volver a tu centro." }
       ],
       media: [
-        { type: "youtube", kind: "Meditación guiada", title: "Respiración y cuencos para dormir", url: "https://www.youtube.com/watch?v=Zrnxw_nczl4", embed: "", tone: "musgo" }
+        { type: "youtube", kind: "Meditación guiada", title: "Respiración y cuencos para dormir", url: "https://www.youtube.com/watch?v=Zrnxw_nczl4", embed: "https://www.youtube.com/watch?v=Zrnxw_nczl4", tone: "musgo" }
       ],
       events: [
         { title: "Baño de gong de invierno", date: "2026-09-19", place: "Sala Om", city: "Tandil", country: "Argentina", type: "Sound Healing", status: "soldout" },
