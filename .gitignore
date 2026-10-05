@@ -1,1 +1,4 @@
 .git-credentials
+.env
+.env.local
+.vercel

@@ -32,12 +32,6 @@ export const CONFIG = {
         { type: "spotify", kind: "Álbum en Spotify", title: "Raíz de Agua", url: "https://open.spotify.com/intl-es/track/66xJ8xKrTNjTPLuGCYTlDm",
   embed: "https://open.spotify.com/embed/track/66xJ8xKrTNjTPLuGCYTlDm", tone: "tierra" },
         { type: "youtube", kind: "Video en vivo", title: "Canto a la Pachamama", url: "https://www.youtube.com/watch?v=Zrnxw_nczl4", embed: "https://www.youtube.com/embed/Zrnxw_nczl4", tone: "selva" }
-      ],
-      events: [
-        { title: "Fogón de cantos", date: "2026-08-22", place: "Espacio Tierra", city: "La Plata", country: "Argentina", type: "Concierto", status: "soldout" },
-        { title: "Canto a la Pachamama", date: "2026-10-17", place: "Casa Arandú", city: "Tandil", country: "Argentina", type: "Concierto íntimo", link: "https://wa.me/", status: "open", description: "Una noche de cantos de raíz a la luz de las velas, con voz, tambor y cuencos." },
-        { title: "Presentación de Raíz de Agua", date: "2026-11-21", place: "Ciudad Cultural Konex", city: "Buenos Aires", country: "Argentina", type: "Lanzamiento", status: "soon", description: "El álbum completo en vivo, con banda e invitadas." },
-        { title: "Ceremonia de canto en el bosque", date: "2026-12-12", place: "Reserva Sierra del Tigre", city: "Tandil", country: "Argentina", type: "Concierto ceremonial", status: "soldout" }
       ]
     },
     {
@@ -50,13 +44,7 @@ export const CONFIG = {
         { title: "Retiros", meta: "Fin de semana • en la naturaleza", text: "Inmersiones de dos o tres días para profundizar la práctica, con comida consciente y tiempo de silencio." },
         { title: "Sesiones individuales", meta: "75 min • presencial u online", text: "Un espacio a tu medida para explorar lo que tu cuerpo necesita expresar en este momento." }
       ],
-      media: [],
-      events: [
-        { title: "Círculo de equinoccio", date: "2026-09-05", place: "Espacio Ananda", city: "La Plata", country: "Argentina", type: "Círculo", status: "soldout" },
-        { title: "Círculo de Shakti · Luna nueva", date: "2026-10-10", place: "Espacio Ananda", city: "La Plata", country: "Argentina", type: "Círculo", link: "https://wa.me/", status: "open", description: "Movimiento, respiración y palabra para sembrar intenciones con la luna nueva." },
-        { title: "Retiro: Despertar del fuego", date: "2026-11-06", endDate: "2026-11-08", place: "Eco-lodge Las Nubes", city: "Sierra de la Ventana", country: "Argentina", type: "Retiro", link: "https://wa.me/", status: "open", description: "Tres días de práctica, fuego, silencio y comida consciente al pie de las sierras." },
-        { title: "Círculo de solsticio", date: "2026-12-20", place: "Casa Arandú", city: "Tandil", country: "Argentina", type: "Círculo", status: "soon" }
-      ]
+      media: []
     },
     {
       id: "sonido", navLabel: "Sonido & Yin", title: "Sound Healing & Yin Yoga", accent: "musgo",
@@ -70,12 +58,6 @@ export const CONFIG = {
       ],
       media: [
         { type: "youtube", kind: "Meditación guiada", title: "Respiración y cuencos para dormir", url: "https://www.youtube.com/watch?v=Zrnxw_nczl4", embed: "https://www.youtube.com/embed/Zrnxw_nczl4", tone: "musgo" }
-      ],
-      events: [
-        { title: "Baño de gong de invierno", date: "2026-09-19", place: "Sala Om", city: "Tandil", country: "Argentina", type: "Sound Healing", status: "soldout" },
-        { title: "Baño de gong y cuencos", date: "2026-10-24", place: "Sala Om", city: "Tandil", country: "Argentina", type: "Sound Healing", link: "https://wa.me/", status: "open", description: "Traé mantita y almohadón. Noventa minutos de vibración y descanso profundo." },
-        { title: "Yin & Sonido: jornada de primavera", date: "2026-11-14", place: "Espacio Ananda", city: "La Plata", country: "Argentina", type: "Jornada", status: "soldout" },
-        { title: "Inmersión sonora de fin de año", date: "2026-12-27", place: "Casa Arandú", city: "Tandil", country: "Argentina", type: "Sound Healing", status: "soon" }
       ]
     }
   ],

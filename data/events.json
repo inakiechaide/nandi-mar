@@ -1,0 +1,132 @@
+[
+  {
+    "area": "musica",
+    "title": "Fogón de cantos",
+    "date": "2026-08-22",
+    "place": "Espacio Tierra",
+    "city": "La Plata",
+    "country": "Argentina",
+    "type": "Concierto",
+    "status": "soldout"
+  },
+  {
+    "area": "shakti",
+    "title": "Círculo de equinoccio",
+    "date": "2026-09-05",
+    "place": "Espacio Ananda",
+    "city": "La Plata",
+    "country": "Argentina",
+    "type": "Círculo",
+    "status": "soldout"
+  },
+  {
+    "area": "sonido",
+    "title": "Baño de gong de invierno",
+    "date": "2026-09-19",
+    "place": "Sala Om",
+    "city": "Tandil",
+    "country": "Argentina",
+    "type": "Sound Healing",
+    "status": "soldout"
+  },
+  {
+    "area": "shakti",
+    "title": "Círculo de Shakti · Luna nueva",
+    "date": "2026-10-10",
+    "place": "Espacio Ananda",
+    "city": "La Plata",
+    "country": "Argentina",
+    "type": "Círculo",
+    "status": "open",
+    "link": "https://wa.me/",
+    "description": "Movimiento, respiración y palabra para sembrar intenciones con la luna nueva."
+  },
+  {
+    "area": "musica",
+    "title": "Canto a la Pachamama",
+    "date": "2026-10-17",
+    "place": "Casa Arandú",
+    "city": "Tandil",
+    "country": "Argentina",
+    "type": "Concierto íntimo",
+    "status": "open",
+    "link": "https://wa.me/",
+    "description": "Una noche de cantos de raíz a la luz de las velas, con voz, tambor y cuencos."
+  },
+  {
+    "area": "sonido",
+    "title": "Baño de gong y cuencos",
+    "date": "2026-10-24",
+    "place": "Sala Om",
+    "city": "Tandil",
+    "country": "Argentina",
+    "type": "Sound Healing",
+    "status": "open",
+    "link": "https://wa.me/",
+    "description": "Traé mantita y almohadón. Noventa minutos de vibración y descanso profundo."
+  },
+  {
+    "area": "shakti",
+    "title": "Retiro: Despertar del fuego",
+    "date": "2026-11-06",
+    "endDate": "2026-11-08",
+    "place": "Eco-lodge Las Nubes",
+    "city": "Sierra de la Ventana",
+    "country": "Argentina",
+    "type": "Retiro",
+    "status": "open",
+    "link": "https://wa.me/",
+    "description": "Tres días de práctica, fuego, silencio y comida consciente al pie de las sierras."
+  },
+  {
+    "area": "sonido",
+    "title": "Yin & Sonido: jornada de primavera",
+    "date": "2026-11-14",
+    "place": "Espacio Ananda",
+    "city": "La Plata",
+    "country": "Argentina",
+    "type": "Jornada",
+    "status": "soldout"
+  },
+  {
+    "area": "musica",
+    "title": "Presentación de Raíz de Agua",
+    "date": "2026-11-21",
+    "place": "Ciudad Cultural Konex",
+    "city": "Buenos Aires",
+    "country": "Argentina",
+    "type": "Lanzamiento",
+    "status": "soon",
+    "description": "El álbum completo en vivo, con banda e invitadas."
+  },
+  {
+    "area": "musica",
+    "title": "Ceremonia de canto en el bosque",
+    "date": "2026-12-12",
+    "place": "Reserva Sierra del Tigre",
+    "city": "Tandil",
+    "country": "Argentina",
+    "type": "Concierto ceremonial",
+    "status": "soldout"
+  },
+  {
+    "area": "shakti",
+    "title": "Círculo de solsticio",
+    "date": "2026-12-20",
+    "place": "Casa Arandú",
+    "city": "Tandil",
+    "country": "Argentina",
+    "type": "Círculo",
+    "status": "soon"
+  },
+  {
+    "area": "sonido",
+    "title": "Inmersión sonora de fin de año",
+    "date": "2026-12-27",
+    "place": "Casa Arandú",
+    "city": "Tandil",
+    "country": "Argentina",
+    "type": "Sound Healing",
+    "status": "soon"
+  }
+]
