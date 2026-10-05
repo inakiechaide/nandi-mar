@@ -66,7 +66,7 @@
       <label class="field"><span>Ciudad *</span><input name="city" required maxlength="80"></label>
       <label class="field"><span>País *</span><input name="country" required maxlength="80"></label>
       <label class="field"><span>Formato *</span><input name="type" required maxlength="80" placeholder="Concierto, Círculo, Retiro…"></label>
-      <label class="field field--wide"><span>Link de reserva</span><input name="link" type="url" placeholder="https://wa.me/…"></label>
+      <label class="field field--wide"><span>Link de reserva</span><input name="link" type="url" pattern="https?://.+" title="Tiene que empezar con http:// o https://" placeholder="https://wa.me/…"></label>
       <label class="field field--wide"><span>Descripción</span><textarea name="description" rows="3" maxlength="600"></textarea></label>
     </div>
     <p class="admin__error" data-error></p>

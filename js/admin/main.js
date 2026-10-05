@@ -80,7 +80,7 @@ async function loadEvents() {
   renderList();
 }
 
-async function save(events, message) {
+async function save(events, message, errorEl = null) {
   try {
     const data = await api("events", { method: "PUT", body: { events, sha: state.sha, message } });
     state.events = data.events;
@@ -91,7 +91,7 @@ async function save(events, message) {
   } catch (err) {
     if (handleAuthError(err)) return false;
     if (err.status === 409) await loadEvents().catch(() => {});
-    toast(err.message, true);
+    if (errorEl) errorEl.textContent = err.message; else toast(err.message, true);
     return false;
   }
 }
@@ -150,7 +150,7 @@ form.addEventListener("submit", async e => {
   const events = [...state.events];
   if (editing === null) events.push(ev); else events[editing] = ev;
   const message = `${editing === null ? "alta" : "edición"} "${ev.title}"`;
-  const ok = await withBusy($('button[type="submit"]', form), () => save(events, message));
+  const ok = await withBusy($('button[type="submit"]', form), () => save(events, message, $("[data-error]", form)));
   if (ok) dialog.close();
 });
 $("[data-cancel]", form).addEventListener("click", () => dialog.close());
