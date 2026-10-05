@@ -19,7 +19,24 @@ export const byDate = (a, b) => toDate(a.date) - toDate(b.date);
 
 export const accentStyle = area => `--accent:var(--c-${area.accent});--accent-ink:var(--c-${area.accent}-ink)`;
 
-export const EVENTS = CONFIG.areas.flatMap(area => area.events.map((ev, i) => ({ ...ev, id: `${area.id}-${i}`, area })));
+export const EVENTS_URL = "data/events.json";
+
+export let EVENTS = [];
+
+export const setEvents = list => {
+  EVENTS = list.map((ev, i) => ({ ...ev, id: `ev-${i}`, area: CONFIG.areas.find(a => a.id === ev.area) })).filter(ev => ev.area && ev.date);
+};
+
+export async function loadEvents() {
+  try {
+    const res = await fetch(EVENTS_URL, { cache: "no-cache" });
+    if (!res.ok) throw new Error(res.status);
+    setEvents(await res.json());
+  } catch (err) {
+    console.error("No se pudieron cargar los eventos", err);
+    setEvents([]);
+  }
+}
 
 export const rangeLabel = ev => {
   const a = toDate(ev.date);

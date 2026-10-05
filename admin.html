@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin de eventos | Nandi Mar</title>
+<meta name="theme-color" content="#1E1712">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌿%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin">
+<header class="admin__bar">
+  <div class="container admin__bar-inner">
+    <a class="nav__brand" href="./">Nandi Mar</a>
+    <span class="admin__tag">Admin de eventos</span>
+    <button id="logout" class="btn btn--ghost btn--sm" type="button" hidden>Salir</button>
+  </div>
+</header>
+
+<main class="container admin__main">
+  <p id="toast" class="admin__toast" role="status" aria-live="polite"></p>
+
+  <section id="view-loading" class="admin__view"><p class="admin__muted">Cargando…</p></section>
+
+  <section id="view-login" class="admin__view" hidden>
+    <form id="login-form" class="admin__card" autocomplete="on">
+      <h1 class="admin__title">Ingresar</h1>
+      <label class="field"><span>Usuario</span><input name="user" autocomplete="username" required></label>
+      <label class="field"><span>Contraseña</span><input name="password" type="password" autocomplete="current-password" required></label>
+      <p class="admin__error" data-error></p>
+      <button class="btn" type="submit">Ingresar</button>
+    </form>
+  </section>
+
+
+  <section id="view-panel" class="admin__view" hidden>
+    <div class="admin__head">
+      <h1 class="admin__title">Eventos</h1>
+      <button id="new-event" class="btn" type="button">+ Nuevo evento</button>
+    </div>
+    <div class="admin__tools">
+      <label class="field field--inline"><span>Área</span><select id="filter-area"></select></label>
+      <label class="check"><input id="filter-past" type="checkbox"> Mostrar pasados</label>
+      <span class="admin__spacer"></span>
+      <button id="download" class="btn btn--ghost btn--sm" type="button">Descargar JSON</button>
+    </div>
+    <ul id="event-list" class="admin__list"></ul>
+  </section>
+</main>
+
+<dialog id="event-dialog" class="admin__dialog">
+  <form id="event-form" method="dialog" novalidate>
+    <h2 class="admin__title" data-title>Nuevo evento</h2>
+    <div class="grid">
+      <label class="field field--wide"><span>Título *</span><input name="title" required maxlength="140"></label>
+      <label class="field"><span>Área *</span><select name="area" required></select></label>
+      <label class="field"><span>Estado *</span><select name="status" required></select></label>
+      <label class="field"><span>Fecha *</span><input name="date" type="date" required></label>
+      <label class="field"><span>Fecha de fin</span><input name="endDate" type="date"></label>
+      <label class="field"><span>Lugar *</span><input name="place" required maxlength="140"></label>
+      <label class="field"><span>Ciudad *</span><input name="city" required maxlength="80"></label>
+      <label class="field"><span>País *</span><input name="country" required maxlength="80"></label>
+      <label class="field"><span>Formato *</span><input name="type" required maxlength="80" placeholder="Concierto, Círculo, Retiro…"></label>
+      <label class="field field--wide"><span>Link de reserva</span><input name="link" type="url" placeholder="https://wa.me/…"></label>
+      <label class="field field--wide"><span>Descripción</span><textarea name="description" rows="3" maxlength="600"></textarea></label>
+    </div>
+    <p class="admin__error" data-error></p>
+    <div class="admin__actions">
+      <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
+      <button class="btn" type="submit" value="save">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+
+<script type="module" src="js/admin/main.js"></script>
+</body>
+</html>
