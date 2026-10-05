@@ -204,6 +204,8 @@ button{font:inherit;color:inherit}
 .footer__inner{display:flex;flex-wrap:wrap;gap:var(--s-3) var(--s-6);justify-content:space-between;align-items:center}
 .footer__brand{font-family:var(--f-display);letter-spacing:var(--ls-wide);color:var(--c-cream);font-size:var(--fs-sm)}
 .footer p{margin:0}
+.footer__admin{color:inherit;opacity:.6;text-decoration:none;transition:opacity .2s}
+.footer__admin:hover,.footer__admin:focus-visible{opacity:1;text-decoration:underline}
 
 /* ==== MODAL ==== */
 .modal{position:fixed;inset:0;z-index:var(--z-modal);display:grid;place-items:center;padding:var(--gutter);opacity:0;visibility:hidden;transition:opacity var(--t-med) var(--ease),visibility 0s linear var(--t-med)}
