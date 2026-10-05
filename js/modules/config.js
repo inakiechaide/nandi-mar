@@ -70,7 +70,7 @@ export const CONFIG = {
     { name: "Instagram", url: "https://www.instagram.com/nandi_mar", icon: "instagram" },
     { name: "Spotify", url: "https://open.spotify.com/", icon: "spotify" },
     { name: "YouTube", url: "https://www.youtube.com/@mariafernandasaravisalaman8084", icon: "youtube" },
-    { name: "WhatsApp", url: "https://wa.me/", icon: "whatsapp" },
+    { name: "WhatsApp", url: "https://wa.me/+5493456558498", icon: "whatsapp" },
     { name: "Email", url: "mailto:hola@nandimar.com", icon: "email" }
   ],
   newsletter: {
