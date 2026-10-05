@@ -143,7 +143,7 @@ export function renderContact(c) {
 }
 
 export function renderFooter(f) {
-  return `<div class="container footer__inner"><span class="footer__brand">${esc(CONFIG.site.name.toUpperCase())}</span><p>${esc(f.text)}</p><p>© ${new Date().getFullYear()} ${esc(CONFIG.site.name)}. ${esc(f.credits)} · <a class="footer__admin" href="admin.html" rel="nofollow">Admin</a></p></div>`;
+  return `<div class="container footer__inner"><span class="footer__brand">${esc(CONFIG.site.name.toUpperCase())}</span><p>${esc(f.text)} · <a class="footer__admin" href="admin.html" rel="nofollow">Admin</a></p><p>© ${new Date().getFullYear()} ${esc(CONFIG.site.name)}. ${esc(f.credits)}</p></div>`;
 }
 
 export function renderModal(ev) {
