@@ -55,12 +55,15 @@ $("#nav-events").addEventListener("click", () => {
   loadEvents();
 });
 
-$("#nav-sections").addEventListener("click", () => {
+$("#nav-sections").addEventListener("click", async () => {
   show("sections");
-  import("./sections.js").then(() => {}).catch(err => {
+  try {
+    const module = await import("./sections.js");
+    await module.init();
+  } catch (err) {
     console.error("Error loading sections module:", err);
     toast("Error al cargar módulo de secciones", true);
-  });
+  }
 });
 
 /* ==== LISTADO ==== */

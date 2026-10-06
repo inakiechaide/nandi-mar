@@ -284,8 +284,10 @@ $("#contact-form").addEventListener("submit", async e => {
 $("[data-cancel]", $("#contact-form")).addEventListener("click", () => $("#contact-dialog").close());
 
 /* ==== INIT ==== */
-async function init() {
+let initialized = false;
+
+export async function init() {
+  if (initialized) return;
+  initialized = true;
   await loadConfig();
 }
-
-init();
