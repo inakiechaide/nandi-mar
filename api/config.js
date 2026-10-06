@@ -69,7 +69,9 @@ module.exports = async (req, res) => {
   try {
     if (req.method === "GET") {
       const { sha, text } = await readFile(CONFIG_PATH);
+      console.log("Config file text preview:", text ? text.substring(0, 200) : "null");
       const config = text ? extractConfigFromJS(text) : null;
+      console.log("Extracted config:", config ? "success" : "null");
       return send(res, 200, { sha, config });
     }
 
