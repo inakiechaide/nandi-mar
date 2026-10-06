@@ -117,7 +117,7 @@ $("#about-form").addEventListener("submit", async e => {
   }
 });
 
-$("[data-cancel]", "#about-form").addEventListener("click", () => $("#about-dialog").close());
+$("[data-cancel]", $("#about-form")).addEventListener("click", () => $("#about-dialog").close());
 
 /* ==== AREAS DIALOG ==== */
 let editingAreaIndex = null;
@@ -187,7 +187,7 @@ $("#area-form").addEventListener("submit", async e => {
   }
 });
 
-$("[data-cancel]", "#area-form").addEventListener("click", () => $("#area-dialog").close());
+$("[data-cancel]", $("#area-form")).addEventListener("click", () => $("#area-dialog").close());
 
 $("#areas-list").addEventListener("click", async e => {
   const edit = e.target.closest("[data-edit-area]");
@@ -281,7 +281,7 @@ $("#contact-form").addEventListener("submit", async e => {
   }
 });
 
-$("[data-cancel]", "#contact-form").addEventListener("click", () => $("#contact-dialog").close());
+$("[data-cancel]", $("#contact-form")).addEventListener("click", () => $("#contact-dialog").close());
 
 /* ==== INIT ==== */
 async function init() {
