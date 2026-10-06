@@ -3,6 +3,7 @@
 .admin [hidden]{display:none!important}
 .admin__bar{position:sticky;top:0;z-index:var(--z-nav);background:var(--c-veil-2);border-bottom:var(--line-w) solid var(--c-line);backdrop-filter:blur(8px)}
 .admin__bar-inner{display:flex;align-items:center;gap:var(--s-4);min-height:var(--nav-h)}
+.admin__nav{display:flex;gap:var(--s-2)}
 .admin__tag{flex:1;line-height:var(--lh-tight);color:var(--c-mute);font-size:var(--fs-sm);letter-spacing:var(--ls-soft)}
 .admin__main{padding-block:var(--s-7) var(--s-9)}
 .admin__title{font-family:var(--f-display);font-weight:var(--fw-regular);font-size:var(--fs-h3);letter-spacing:var(--ls-soft);margin:0 0 var(--s-5)}
@@ -22,6 +23,12 @@
 .admin__list{list-style:none;margin:0;padding:0;display:grid;gap:var(--s-3)}
 .admin__item{display:grid;grid-template-columns:1fr;gap:var(--s-2) var(--s-4);align-items:center;padding:var(--s-4);border:var(--line-w) solid var(--c-line);border-left:3px solid var(--accent,var(--c-ocre));border-radius:var(--r-sm);background:var(--c-earth-2)}
 .admin__item.is-past{opacity:.6}
+.admin__section-item{display:grid;grid-template-columns:1fr;gap:var(--s-2);align-items:center;padding:var(--s-4);border:var(--line-w) solid var(--c-line);border-radius:var(--r-sm);background:var(--c-earth-2)}
+.admin__section-item h3{margin:0;font-family:var(--f-serif);font-size:var(--fs-lg);font-weight:var(--fw-medium);line-height:var(--lh-tight)}
+.admin__section-item .admin__meta{margin:0;color:var(--c-mute);font-size:var(--fs-sm)}
+.admin__section-item .admin__btns{justify-self:end}
+@media (min-width:640px){.admin__section-item{grid-template-columns:1fr auto}.admin__section-item .admin__btns{justify-self:auto}}
+.admin__area-item{display:flex;align-items:center;justify-content:space-between;padding:var(--s-3);border:var(--line-w) solid var(--c-line);border-radius:var(--r-sm);background:var(--c-earth-2)}
 .admin__date{font-family:var(--f-display);font-size:var(--fs-sm);color:var(--accent-ink,var(--c-ocre-ink))}
 .admin__item h3{margin:0;font-family:var(--f-serif);font-size:var(--fs-lg);font-weight:var(--fw-medium);line-height:var(--lh-tight)}
 .admin__meta{margin:0;color:var(--c-mute);font-size:var(--fs-sm)}

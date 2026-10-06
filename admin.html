@@ -17,7 +17,11 @@
 <header class="admin__bar">
   <div class="container admin__bar-inner">
     <a class="nav__brand" href="./">Nandi Mar</a>
-    <span class="admin__tag">Admin de eventos</span>
+    <span class="admin__tag">Admin</span>
+    <div class="admin__nav">
+      <button id="nav-events" class="btn btn--ghost btn--sm" type="button">Eventos</button>
+      <button id="nav-sections" class="btn btn--ghost btn--sm" type="button">Secciones</button>
+    </div>
     <button id="logout" class="btn btn--ghost btn--sm" type="button" hidden>Salir</button>
   </div>
 </header>
@@ -39,7 +43,7 @@
   </section>
 
 
-  <section id="view-panel" class="admin__view" hidden>
+  <section id="view-events" class="admin__view" hidden>
     <div class="admin__head">
       <h1 class="admin__title">Eventos</h1>
       <button id="new-event" class="btn" type="button">+ Nuevo evento</button>
@@ -51,6 +55,13 @@
       <button id="download" class="btn btn--ghost btn--sm" type="button">Descargar JSON</button>
     </div>
     <ul id="event-list" class="admin__list"></ul>
+  </section>
+
+  <section id="view-sections" class="admin__view" hidden>
+    <div class="admin__head">
+      <h1 class="admin__title">Secciones</h1>
+    </div>
+    <ul id="sections-list" class="admin__list"></ul>
   </section>
 </main>
 
@@ -78,6 +89,84 @@
   </form>
 </dialog>
 
+<dialog id="about-dialog" class="admin__dialog">
+  <form id="about-form" method="dialog" novalidate>
+    <h2 class="admin__title">Editar "Sobre mí"</h2>
+    <div class="grid">
+      <label class="field"><span>ID</span><input name="aboutId" required></label>
+      <label class="field"><span>Label de navegación</span><input name="aboutNavLabel" required></label>
+      <label class="field field--wide"><span>Título</span><input name="aboutTitle" required></label>
+      <label class="field field--wide"><span>Lead</span><textarea name="aboutLead" rows="2"></textarea></label>
+      <label class="field field--wide"><span>Párrafos (separados por doble salto de línea)</span><textarea name="aboutParagraphs" rows="5"></textarea></label>
+      <label class="field field--wide"><span>Quote</span><textarea name="aboutQuote" rows="2"></textarea></label>
+    </div>
+    <p class="admin__error" data-error></p>
+    <div class="admin__actions">
+      <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
+      <button class="btn" type="submit" value="save">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="areas-dialog" class="admin__dialog">
+  <h2 class="admin__title">Áreas</h2>
+  <ul id="areas-list" class="admin__list"></ul>
+  <div class="admin__actions">
+    <button class="btn btn--ghost" type="button" data-cancel>Cerrar</button>
+    <button id="new-area" class="btn" type="button">+ Nueva área</button>
+  </div>
+</dialog>
+
+<dialog id="area-dialog" class="admin__dialog">
+  <form id="area-form" method="dialog" novalidate>
+    <h2 class="admin__title" data-title>Nueva área</h2>
+    <div class="grid">
+      <label class="field"><span>ID *</span><input name="areaId" required></label>
+      <label class="field"><span>Label de navegación *</span><input name="areaNavLabel" required></label>
+      <label class="field field--wide"><span>Título *</span><input name="areaTitle" required></label>
+      <label class="field"><span>Acento</span><select name="areaAccent">
+        <option value="ocre">Ocre</option>
+        <option value="terra">Tierra</option>
+        <option value="musgo">Musgo</option>
+        <option value="selva">Selva</option>
+      </select></label>
+      <label class="field field--wide"><span>Subtítulo</span><input name="areaSubtitle"></label>
+      <label class="field field--wide"><span>Descripción</span><textarea name="areaDescription" rows="4"></textarea></label>
+    </div>
+    <p class="admin__error" data-error></p>
+    <div class="admin__actions">
+      <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
+      <button class="btn" type="submit" value="save">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="contact-dialog" class="admin__dialog">
+  <form id="contact-form" method="dialog" novalidate>
+    <h2 class="admin__title">Editar "Contacto y redes"</h2>
+    <div class="grid">
+      <label class="field"><span>ID</span><input name="contactId" required></label>
+      <label class="field"><span>Label de navegación</span><input name="contactNavLabel" required></label>
+      <label class="field field--wide"><span>Título</span><input name="contactTitle" required></label>
+      <label class="field field--wide"><span>Texto</span><textarea name="contactText" rows="3"></textarea></label>
+      <label class="field field--wide"><span>Redes sociales (JSON)</span><textarea name="socialsJson" rows="6"></textarea></label>
+      <label class="field field--wide"><span>Email newsletter</span><input name="newsletterEmail"></label>
+      <label class="field field--wide"><span>Título newsletter</span><input name="newsletterTitle"></label>
+      <label class="field field--wide"><span>Label newsletter</span><input name="newsletterLabel"></label>
+      <label class="field field--wide"><span>Placeholder newsletter</span><input name="newsletterPlaceholder"></label>
+      <label class="field field--wide"><span>Botón newsletter</span><input name="newsletterButton"></label>
+      <label class="field field--wide"><span>Estado enviando</span><input name="newsletterSending"></label>
+      <label class="field field--wide"><span>Mensaje éxito</span><input name="newsletterSuccess"></label>
+      <label class="field field--wide"><span>Mensaje error</span><input name="newsletterError"></label>
+      <label class="field field--wide"><span>Nota newsletter</span><textarea name="newsletterNote" rows="2"></textarea></label>
+    </div>
+    <p class="admin__error" data-error></p>
+    <div class="admin__actions">
+      <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
+      <button class="btn" type="submit" value="save">Guardar</button>
+    </div>
+  </form>
+</dialog>
 
 <script type="module" src="js/admin/main.js"></script>
 </body>

@@ -1,13 +1,13 @@
 import { CONFIG } from '../modules/config.js';
 import { $, esc, UI, accentStyle, toDate, rangeLabel, TODAY } from '../modules/utils.js';
 
-const views = ["loading", "login", "panel"];
+const views = ["loading", "login", "events", "sections"];
 const state = { events: [], sha: null };
 const areaById = id => CONFIG.areas.find(a => a.id === id);
 
 function show(name) {
   views.forEach(v => { $(`#view-${v}`).hidden = v !== name; });
-  $("#logout").hidden = name !== "panel";
+  $("#logout").hidden = name !== "events" && name !== "sections";
 }
 
 let toastTimer;
@@ -48,6 +48,20 @@ function handleAuthError(err) {
   toast(err.message, true);
   return true;
 }
+
+/* ==== NAVIGATION ==== */
+$("#nav-events").addEventListener("click", () => {
+  show("events");
+  loadEvents();
+});
+
+$("#nav-sections").addEventListener("click", () => {
+  show("sections");
+  import("./sections.js").then(() => {}).catch(err => {
+    console.error("Error loading sections module:", err);
+    toast("Error al cargar módulo de secciones", true);
+  });
+});
 
 /* ==== LISTADO ==== */
 const isPastEvent = ev => toDate(ev.endDate || ev.date) < TODAY;
@@ -202,7 +216,7 @@ loginForm.addEventListener("submit", async e => {
 });
 
 async function enterPanel() {
-  show("panel");
+  show("events");
   $("#event-list").innerHTML = `<li class="admin__empty">Cargando eventos…</li>`;
   try {
     await loadEvents();
