@@ -28,10 +28,19 @@ async function api(path, { method = "GET", body } = {}) {
 }
 
 async function loadConfig() {
-  const data = await api("config");
-  state.config = data.config;
-  state.sha = data.sha;
-  renderSections();
+  try {
+    const data = await api("config");
+    state.config = data.config;
+    state.sha = data.sha;
+    renderSections();
+  } catch (err) {
+    if (err.status === 401) {
+      toast("Sesión vencida, volvé a ingresar", true);
+      window.location.reload();
+    } else {
+      throw err;
+    }
+  }
 }
 
 async function saveConfig(message, errorEl = null) {
@@ -42,6 +51,11 @@ async function saveConfig(message, errorEl = null) {
     toast("Guardado. El sitio se actualiza en un minuto.");
     return true;
   } catch (err) {
+    if (err.status === 401) {
+      toast("Sesión vencida, volvé a ingresar", true);
+      window.location.reload();
+      return false;
+    }
     if (err.status === 409) await loadConfig().catch(() => {});
     if (errorEl) errorEl.textContent = err.message; else toast(err.message, true);
     return false;
