@@ -29,7 +29,9 @@ async function api(path, { method = "GET", body } = {}) {
 
 async function loadConfig() {
   try {
-    console.log("Loading config...");
+    console.log("Checking session...");
+    await api("session");
+    console.log("Session valid, loading config...");
     const data = await api("config");
     console.log("Config loaded:", data);
     state.config = data.config;
