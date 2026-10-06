@@ -186,7 +186,7 @@ function openAreaForm(index = null) {
   }
   editingAreaIndex = index;
 
-  const area = index === null ? { id: "", navLabel: "", title: "", accent: "ocre", subtitle: "", description: "" } : state.config.areas[index];
+  const area = index === null ? { id: "", navLabel: "", title: "", accent: "ocre", subtitle: "", description: "", image: { src: "", alt: "" }, offerings: [], media: [] } : state.config.areas[index];
 
   form.reset();
   form.elements.areaId.value = area.id || "";
@@ -195,6 +195,14 @@ function openAreaForm(index = null) {
   form.elements.areaAccent.value = area.accent || "ocre";
   form.elements.areaSubtitle.value = area.subtitle || "";
   form.elements.areaDescription.value = area.description || "";
+  form.elements.areaImage.value = area.image?.src || "";
+  form.elements.areaImageAlt.value = area.image?.alt || "";
+
+  // Parse offerings to text
+  form.elements.areaOfferings.value = (area.offerings || []).map(o => `${o.title}|${o.meta}|${o.text}`).join("\n");
+
+  // Parse media to text
+  form.elements.areaMedia.value = (area.media || []).map(m => `${m.type}|${m.kind}|${m.title}|${m.url}|${m.embed}|${m.tone}`).join("\n");
 
   $("[data-title]", form).textContent = index === null ? "Nueva área" : "Editar área";
   $("[data-error]", form).textContent = "";
@@ -204,7 +212,23 @@ function openAreaForm(index = null) {
 $("#area-form").addEventListener("submit", async e => {
   e.preventDefault();
   const form = e.target;
-  
+
+  // Parse offerings from text
+  const offerings = form.elements.areaOfferings.value.split("\n")
+    .filter(line => line.trim())
+    .map(line => {
+      const [title, meta, text] = line.split("|");
+      return { title: title?.trim() || "", meta: meta?.trim() || "", text: text?.trim() || "" };
+    });
+
+  // Parse media from text
+  const media = form.elements.areaMedia.value.split("\n")
+    .filter(line => line.trim())
+    .map(line => {
+      const [type, kind, title, url, embed, tone] = line.split("|");
+      return { type: type?.trim() || "", kind: kind?.trim() || "", title: title?.trim() || "", url: url?.trim() || "", embed: embed?.trim() || "", tone: tone?.trim() || "" };
+    });
+
   const area = {
     id: form.elements.areaId.value.trim(),
     navLabel: form.elements.areaNavLabel.value.trim(),
@@ -212,14 +236,17 @@ $("#area-form").addEventListener("submit", async e => {
     accent: form.elements.areaAccent.value,
     subtitle: form.elements.areaSubtitle.value.trim(),
     description: form.elements.areaDescription.value.trim(),
-    image: editingAreaIndex !== null ? state.config.areas[editingAreaIndex].image : { src: "", alt: "" },
-    offerings: editingAreaIndex !== null ? state.config.areas[editingAreaIndex].offerings : [],
-    media: editingAreaIndex !== null ? state.config.areas[editingAreaIndex].media : []
+    image: {
+      src: form.elements.areaImage.value.trim(),
+      alt: form.elements.areaImageAlt.value.trim()
+    },
+    offerings,
+    media
   };
-  
+
   const areas = [...state.config.areas];
   if (editingAreaIndex === null) areas.push(area); else areas[editingAreaIndex] = area;
-  
+
   state.config.areas = areas;
   const ok = await saveConfig(`${editingAreaIndex === null ? "Alta" : "Edición"} área "${area.navLabel}"`, $("[data-error]", form));
   if (ok) {

@@ -117,7 +117,7 @@
   </div>
 </dialog>
 
-<dialog id="area-dialog" class="admin__dialog">
+<dialog id="area-dialog" class="admin__dialog admin__dialog--lg">
   <form id="area-form" method="dialog" novalidate>
     <h2 class="admin__title" data-title>Nueva área</h2>
     <div class="grid">
@@ -132,6 +132,21 @@
       </select></label>
       <label class="field field--wide"><span>Subtítulo</span><input name="areaSubtitle"></label>
       <label class="field field--wide"><span>Descripción</span><textarea name="areaDescription" rows="4"></textarea></label>
+      <label class="field field--wide"><span>Imagen (URL o base64)</span>
+        <textarea name="areaImage" rows="2" placeholder="https://... o data:image/..."></textarea>
+        <small class="admin__meta">Para base64: subí la imagen a un servicio como <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a>, copiá el resultado que empieza con "data:image/jpeg;base64,..."</small>
+      </label>
+      <label class="field field--wide"><span>Alt de imagen</span><input name="areaImageAlt"></label>
+    </div>
+    <div class="admin__section">
+      <h3>Offerings</h3>
+      <p class="admin__meta">Cada línea: título|meta|texto</p>
+      <label class="field field--wide"><textarea name="areaOfferings" rows="4" placeholder="Raíz de Agua|Álbum • 2026|Nueve canciones..."></textarea></label>
+    </div>
+    <div class="admin__section">
+      <h3>Media</h3>
+      <p class="admin__meta">Cada línea: tipo|kind|título|url|embed|tone</p>
+      <label class="field field--wide"><textarea name="areaMedia" rows="4" placeholder="spotify|Álbum en Spotify|Raíz de Agua|https://...|https://...|tierra"></textarea></label>
     </div>
     <p class="admin__error" data-error></p>
     <div class="admin__actions">
