@@ -7,7 +7,7 @@ const CONFIG_PATH = "js/modules/config.js";
 const commitMessage = msg => `Config: ${String(msg || "actualización").replace(/[\r\n]+/g, " ").slice(0, 100)}`;
 
 function extractConfigFromJS(jsText) {
-  const match = jsText.match(/export const CONFIG = ({[\s\S]*});/);
+  const match = jsText.match(/export const CONFIG\s*=\s*({[\s\S]*});/);
   if (!match) throw new Error("No se pudo encontrar CONFIG en el archivo");
   try {
     return JSON.parse(match[1]);
