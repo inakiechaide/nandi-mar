@@ -50,8 +50,13 @@ async function saveConfig(message, errorEl = null) {
 
 function renderSections() {
   if (!state.config) return;
-  
+
   const container = $("#sections-list");
+  if (!container) {
+    console.error("sections-list not found");
+    return;
+  }
+
   container.innerHTML = `
     <li class="admin__section-item" data-section="about">
       <h3>Sobre mí</h3>
@@ -81,17 +86,21 @@ $("#sections-list").addEventListener("click", async e => {
 function openAboutDialog() {
   const dialog = $("#about-dialog");
   const form = $("#about-form");
+  if (!dialog || !form) {
+    console.error("Dialog or form not found");
+    return;
+  }
   const about = state.config.about;
-  
+
   form.reset();
   form.elements.aboutId.value = about.id || "";
   form.elements.aboutNavLabel.value = about.navLabel || "";
   form.elements.aboutTitle.value = about.title || "";
   form.elements.aboutLead.value = about.lead || "";
   form.elements.aboutQuote.value = about.quote || "";
-  
+
   form.elements.aboutParagraphs.value = (about.paragraphs || []).join("\n\n");
-  
+
   $("[data-error]", form).textContent = "";
   dialog.showModal();
 }
@@ -125,7 +134,11 @@ let editingAreaIndex = null;
 function openAreasDialog() {
   const dialog = $("#areas-dialog");
   const list = $("#areas-list");
-  
+  if (!dialog || !list) {
+    console.error("Dialog or list not found");
+    return;
+  }
+
   list.innerHTML = state.config.areas.map((area, index) => `
     <li class="admin__area-item">
       <span>${esc(area.navLabel)}</span>
@@ -135,17 +148,21 @@ function openAreasDialog() {
       </div>
     </li>
   `).join("");
-  
+
   dialog.showModal();
 }
 
 function openAreaForm(index = null) {
   const dialog = $("#area-dialog");
   const form = $("#area-form");
+  if (!dialog || !form) {
+    console.error("Dialog or form not found");
+    return;
+  }
   editingAreaIndex = index;
-  
+
   const area = index === null ? { id: "", navLabel: "", title: "", accent: "ocre", subtitle: "", description: "" } : state.config.areas[index];
-  
+
   form.reset();
   form.elements.areaId.value = area.id || "";
   form.elements.areaNavLabel.value = area.navLabel || "";
@@ -153,7 +170,7 @@ function openAreaForm(index = null) {
   form.elements.areaAccent.value = area.accent || "ocre";
   form.elements.areaSubtitle.value = area.subtitle || "";
   form.elements.areaDescription.value = area.description || "";
-  
+
   $("[data-title]", form).textContent = index === null ? "Nueva área" : "Editar área";
   $("[data-error]", form).textContent = "";
   dialog.showModal();
@@ -215,18 +232,22 @@ $("#new-area").addEventListener("click", () => openAreaForm());
 function openContactDialog() {
   const dialog = $("#contact-dialog");
   const form = $("#contact-form");
+  if (!dialog || !form) {
+    console.error("Dialog or form not found");
+    return;
+  }
   const contact = state.config.contact;
   const socials = state.config.socials;
   const newsletter = state.config.newsletter;
-  
+
   form.reset();
   form.elements.contactId.value = contact.id || "";
   form.elements.contactNavLabel.value = contact.navLabel || "";
   form.elements.contactTitle.value = contact.title || "";
   form.elements.contactText.value = contact.text || "";
-  
+
   form.elements.socialsJson.value = JSON.stringify(socials, null, 2);
-  
+
   form.elements.newsletterEmail.value = newsletter.email || "";
   form.elements.newsletterTitle.value = newsletter.title || "";
   form.elements.newsletterLabel.value = newsletter.label || "";
@@ -236,7 +257,7 @@ function openContactDialog() {
   form.elements.newsletterSuccess.value = newsletter.success || "";
   form.elements.newsletterError.value = newsletter.error || "";
   form.elements.newsletterNote.value = newsletter.note || "";
-  
+
   $("[data-error]", form).textContent = "";
   dialog.showModal();
 }

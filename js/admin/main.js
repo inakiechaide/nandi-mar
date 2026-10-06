@@ -8,6 +8,8 @@ const areaById = id => CONFIG.areas.find(a => a.id === id);
 function show(name) {
   views.forEach(v => { $(`#view-${v}`).hidden = v !== name; });
   $("#logout").hidden = name !== "events" && name !== "sections";
+  $("#nav-events").hidden = name === "login" || name === "loading";
+  $("#nav-sections").hidden = name === "login" || name === "loading";
 }
 
 let toastTimer;
