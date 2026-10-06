@@ -29,16 +29,19 @@ async function api(path, { method = "GET", body } = {}) {
 
 async function loadConfig() {
   try {
+    console.log("Loading config...");
     const data = await api("config");
+    console.log("Config loaded:", data);
     state.config = data.config;
     state.sha = data.sha;
     renderSections();
   } catch (err) {
+    console.error("Error loading config:", err);
     if (err.status === 401) {
       toast("Sesión vencida, volvé a ingresar", true);
       window.location.reload();
     } else {
-      throw err;
+      toast(`Error: ${err.message}`, true);
     }
   }
 }
@@ -63,7 +66,11 @@ async function saveConfig(message, errorEl = null) {
 }
 
 function renderSections() {
-  if (!state.config) return;
+  console.log("renderSections called, config:", state.config);
+  if (!state.config) {
+    console.error("No config available");
+    return;
+  }
 
   const container = $("#sections-list");
   if (!container) {
@@ -71,6 +78,7 @@ function renderSections() {
     return;
   }
 
+  console.log("Rendering sections");
   container.innerHTML = `
     <li class="admin__section-item" data-section="about">
       <h3>Sobre mí</h3>
@@ -88,6 +96,7 @@ function renderSections() {
       <button class="btn btn--ghost btn--sm" type="button" data-edit-contact>Editar</button>
     </li>
   `;
+  console.log("Sections rendered");
 }
 
 $("#sections-list").addEventListener("click", async e => {
@@ -322,7 +331,12 @@ $("[data-cancel]", $("#contact-form")).addEventListener("click", () => $("#conta
 let initialized = false;
 
 export async function init() {
-  if (initialized) return;
+  console.log("sections.js init called, initialized:", initialized);
+  if (initialized) {
+    console.log("Already initialized, skipping");
+    return;
+  }
   initialized = true;
+  console.log("Initializing sections module");
   await loadConfig();
 }
