@@ -89,7 +89,7 @@
   </form>
 </dialog>
 
-<dialog id="about-dialog" class="admin__dialog">
+<dialog id="about-dialog" class="admin__dialog admin__dialog--lg">
   <form id="about-form" method="dialog" novalidate>
     <h2 class="admin__title">Editar "Sobre mí"</h2>
     <div class="grid">
@@ -99,9 +99,15 @@
       <label class="field field--wide"><span>Lead</span><textarea name="aboutLead" rows="2"></textarea></label>
       <label class="field field--wide"><span>Párrafos (separados por doble salto de línea)</span><textarea name="aboutParagraphs" rows="5"></textarea></label>
       <label class="field field--wide"><span>Quote</span><textarea name="aboutQuote" rows="2"></textarea></label>
+      <label class="field field--wide"><span>Imagen (URL o base64)</span>
+        <textarea name="aboutImage" rows="2" placeholder="https://... o data:image/..."></textarea>
+        <small class="admin__meta">Para base64: subí la imagen a un servicio como <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a>, copiá el resultado que empieza con "data:image/jpeg;base64,..."</small>
+      </label>
+      <label class="field field--wide"><span>Alt de imagen</span><input name="aboutImageAlt"></label>
     </div>
     <p class="admin__error" data-error></p>
     <div class="admin__actions">
+      <button class="btn btn--ghost" type="button" data-preview>Preview</button>
       <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
       <button class="btn" type="submit" value="save">Guardar</button>
     </div>
@@ -150,10 +156,21 @@
     </div>
     <p class="admin__error" data-error></p>
     <div class="admin__actions">
+      <button class="btn btn--ghost" type="button" data-preview>Preview</button>
       <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
       <button class="btn" type="submit" value="save">Guardar</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="preview-dialog" class="admin__dialog admin__dialog--lg">
+  <div class="admin__preview">
+    <div class="admin__preview-header">
+      <h2 class="admin__title">Preview</h2>
+      <button class="btn btn--ghost btn--sm" type="button" data-close-preview>Cerrar</button>
+    </div>
+    <div id="preview-content"></div>
+  </div>
 </dialog>
 
 <dialog id="contact-dialog" class="admin__dialog">

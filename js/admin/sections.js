@@ -123,6 +123,8 @@ function openAboutDialog() {
   form.elements.aboutTitle.value = about.title || "";
   form.elements.aboutLead.value = about.lead || "";
   form.elements.aboutQuote.value = about.quote || "";
+  form.elements.aboutImage.value = about.image?.src || "";
+  form.elements.aboutImageAlt.value = about.image?.alt || "";
 
   form.elements.aboutParagraphs.value = (about.paragraphs || []).join("\n\n");
 
@@ -134,16 +136,20 @@ $("#about-form").addEventListener("submit", async e => {
   e.preventDefault();
   const form = e.target;
   const paragraphs = form.elements.aboutParagraphs.value.split("\n\n").filter(p => p.trim());
-  
+
   state.config.about = {
     id: form.elements.aboutId.value.trim(),
     navLabel: form.elements.aboutNavLabel.value.trim(),
     title: form.elements.aboutTitle.value.trim(),
     lead: form.elements.aboutLead.value.trim(),
     paragraphs: paragraphs,
-    quote: form.elements.aboutQuote.value.trim()
+    quote: form.elements.aboutQuote.value.trim(),
+    image: {
+      src: form.elements.aboutImage.value.trim(),
+      alt: form.elements.aboutImageAlt.value.trim()
+    }
   };
-  
+
   const ok = await saveConfig("Edición 'Sobre mí'", $("[data-error]", form));
   if (ok) {
     dialog.close();
@@ -152,6 +158,24 @@ $("#about-form").addEventListener("submit", async e => {
 });
 
 $("[data-cancel]", $("#about-form")).addEventListener("click", () => $("#about-dialog").close());
+
+$("[data-preview]", $("#about-form")).addEventListener("click", () => {
+  const form = $("#about-form");
+  const paragraphs = form.elements.aboutParagraphs.value.split("\n\n").filter(p => p.trim());
+  const about = {
+    id: form.elements.aboutId.value.trim(),
+    navLabel: form.elements.aboutNavLabel.value.trim(),
+    title: form.elements.aboutTitle.value.trim(),
+    lead: form.elements.aboutLead.value.trim(),
+    paragraphs: paragraphs,
+    quote: form.elements.aboutQuote.value.trim(),
+    image: {
+      src: form.elements.aboutImage.value.trim(),
+      alt: form.elements.aboutImageAlt.value.trim()
+    }
+  };
+  showPreview("about", about);
+});
 
 /* ==== AREAS DIALOG ==== */
 let editingAreaIndex = null;
@@ -258,6 +282,39 @@ $("#area-form").addEventListener("submit", async e => {
 
 $("[data-cancel]", $("#area-form")).addEventListener("click", () => $("#area-dialog").close());
 
+$("[data-preview]", $("#area-form")).addEventListener("click", () => {
+  const form = $("#area-form");
+  const offerings = form.elements.areaOfferings.value.split("\n")
+    .filter(line => line.trim())
+    .map(line => {
+      const [title, meta, text] = line.split("|");
+      return { title: title?.trim() || "", meta: meta?.trim() || "", text: text?.trim() || "" };
+    });
+
+  const media = form.elements.areaMedia.value.split("\n")
+    .filter(line => line.trim())
+    .map(line => {
+      const [type, kind, title, url, embed, tone] = line.split("|");
+      return { type: type?.trim() || "", kind: kind?.trim() || "", title: title?.trim() || "", url: url?.trim() || "", embed: embed?.trim() || "", tone: tone?.trim() || "" };
+    });
+
+  const area = {
+    id: form.elements.areaId.value.trim(),
+    navLabel: form.elements.areaNavLabel.value.trim(),
+    title: form.elements.areaTitle.value.trim(),
+    accent: form.elements.areaAccent.value,
+    subtitle: form.elements.areaSubtitle.value.trim(),
+    description: form.elements.areaDescription.value.trim(),
+    image: {
+      src: form.elements.areaImage.value.trim(),
+      alt: form.elements.areaImageAlt.value.trim()
+    },
+    offerings,
+    media
+  };
+  showPreview("area", area);
+});
+
 $("#areas-list").addEventListener("click", async e => {
   const edit = e.target.closest("[data-edit-area]");
   if (edit) {
@@ -355,6 +412,48 @@ $("#contact-form").addEventListener("submit", async e => {
 });
 
 $("[data-cancel]", $("#contact-form")).addEventListener("click", () => $("#contact-dialog").close());
+
+/* ==== PREVIEW ==== */
+function showPreview(type, data) {
+  const dialog = $("#preview-dialog");
+  const content = $("#preview-content");
+  if (!dialog || !content) return;
+
+  let html = "";
+  if (type === "about") {
+    html = `
+      <div class="preview-section">
+        <h2>${esc(data.title)}</h2>
+        <p class="preview-lead">${esc(data.lead)}</p>
+        ${data.image?.src ? `<img src="${esc(data.image.src)}" alt="${esc(data.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : ""}
+        ${data.paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}
+        <blockquote class="preview-quote">${esc(data.quote)}</blockquote>
+      </div>
+    `;
+  } else if (type === "area") {
+    html = `
+      <div class="preview-section">
+        <h2>${esc(data.title)}</h2>
+        <p class="preview-subtitle">${esc(data.subtitle)}</p>
+        ${data.image?.src ? `<img src="${esc(data.image.src)}" alt="${esc(data.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : ""}
+        <p>${esc(data.description)}</p>
+        <h3>Offerings</h3>
+        <ul>
+          ${data.offerings.map(o => `<li><strong>${esc(o.title)}</strong> — ${esc(o.meta)}<br>${esc(o.text)}</li>`).join("")}
+        </ul>
+        <h3>Media</h3>
+        <ul>
+          ${data.media.map(m => `<li>${esc(m.type)}: ${esc(m.title)}</li>`).join("")}
+        </ul>
+      </div>
+    `;
+  }
+
+  content.innerHTML = html;
+  dialog.showModal();
+}
+
+$("[data-close-preview]").addEventListener("click", () => $("#preview-dialog").close());
 
 /* ==== INIT ==== */
 let initialized = false;
