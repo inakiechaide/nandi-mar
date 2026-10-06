@@ -7,11 +7,16 @@ const CONFIG_PATH = "js/modules/config.js";
 const commitMessage = msg => `Config: ${String(msg || "actualización").replace(/[\r\n]+/g, " ").slice(0, 100)}`;
 
 function extractConfigFromJS(jsText) {
-  const match = jsText.match(/export const CONFIG\s*=\s*({[\s\S]*});/);
+  // Buscar desde "export const CONFIG = " hasta el cierre con ";"
+  const match = jsText.match(/export const CONFIG\s*=\s*([\s\S]*?);/);
   if (!match) throw new Error("No se pudo encontrar CONFIG en el archivo");
   try {
-    return JSON.parse(match[1]);
+    // El match[1] puede incluir espacios al inicio/fin, limpiarlo
+    const clean = match[1].trim();
+    return JSON.parse(clean);
   } catch (err) {
+    console.error("Error parsing config:", err.message);
+    console.error("Config text:", match[1]);
     throw new Error("El formato de CONFIG no es válido JSON");
   }
 }
