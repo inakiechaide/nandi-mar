@@ -158,7 +158,7 @@ $("#about-form").addEventListener("submit", async e => {
   }
 });
 
-$("[data-cancel]", $("#about-form")).addEventListener("click", () => $("#about-dialog").close());
+$("#about-form [data-cancel]").addEventListener("click", () => $("#about-dialog").close());
 
 // Live preview for about form
 $("#about-form").addEventListener("input", updateAboutPreview);
@@ -241,6 +241,7 @@ function openAreaForm(index = null) {
 
   renderOfferingsList();
   renderMediaList();
+  updateAccentPicker(form.elements.areaAccent.value);
 
   $("[data-title]", form).textContent = index === null ? "Nueva área" : "Editar área";
   $("[data-error]", form).textContent = "";
@@ -279,10 +280,28 @@ $("#area-form").addEventListener("submit", async e => {
   }
 });
 
-$("[data-cancel]", $("#area-form")).addEventListener("click", () => $("#area-dialog").close());
+$("#area-form [data-cancel]").addEventListener("click", () => $("#area-dialog").close());
 
 // Live preview for area form
 $("#area-form").addEventListener("input", updateAreaPreview);
+
+// Accent color picker
+function updateAccentPicker(selectedColor) {
+  const picker = $("#accent-picker");
+  if (!picker) return;
+  picker.querySelectorAll(".admin__color-option").forEach(opt => {
+    opt.classList.toggle("selected", opt.dataset.color === selectedColor);
+  });
+}
+
+$("#accent-picker").addEventListener("click", e => {
+  if (e.target.dataset.color) {
+    const color = e.target.dataset.color;
+    $("#area-form [name=areaAccent]").value = color;
+    updateAccentPicker(color);
+    updateAreaPreview();
+  }
+});
 
 function updateAreaPreview() {
   const form = $("#area-form");
@@ -419,7 +438,7 @@ $("#contact-form").addEventListener("submit", async e => {
   }
 });
 
-$("[data-cancel]", $("#contact-form")).addEventListener("click", () => $("#contact-dialog").close());
+$("#contact-form [data-cancel]").addEventListener("click", () => $("#contact-dialog").close());
 
 // Live preview for contact form
 $("#contact-form").addEventListener("input", updateContactPreview);

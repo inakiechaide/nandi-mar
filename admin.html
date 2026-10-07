@@ -139,12 +139,15 @@
           <label class="field"><span>ID *</span><input name="areaId" required></label>
           <label class="field"><span>Label de navegación *</span><input name="areaNavLabel" required></label>
           <label class="field field--wide"><span>Título *</span><input name="areaTitle" required></label>
-          <label class="field"><span>Acento</span><select name="areaAccent">
-            <option value="ocre">Ocre</option>
-            <option value="terra">Tierra</option>
-            <option value="musgo">Musgo</option>
-            <option value="selva">Selva</option>
-          </select></label>
+          <label class="field"><span>Acento</span>
+            <div class="admin__color-picker" id="accent-picker">
+              <div class="admin__color-option" data-color="ocre" title="Ocre"></div>
+              <div class="admin__color-option" data-color="terra" title="Tierra"></div>
+              <div class="admin__color-option" data-color="musgo" title="Musgo"></div>
+              <div class="admin__color-option" data-color="selva" title="Selva"></div>
+            </div>
+            <input type="hidden" name="areaAccent" value="ocre">
+          </label>
           <label class="field field--wide"><span>Subtítulo</span><input name="areaSubtitle"></label>
           <label class="field field--wide"><span>Descripción</span><textarea name="areaDescription" rows="4"></textarea></label>
           <label class="field field--wide"><span>Imagen (URL o base64)</span>
@@ -156,12 +159,12 @@
         <div class="admin__section">
           <h3>Offerings</h3>
           <div id="offerings-list"></div>
-          <button type="button" class="btn btn--ghost btn--sm" id="add-offering">+ Agregar offering</button>
+          <button type="button" class="btn btn--ghost btn--sm admin__add-btn" id="add-offering">+ Agregar offering</button>
         </div>
         <div class="admin__section">
           <h3>Media</h3>
           <div id="media-list"></div>
-          <button type="button" class="btn btn--ghost btn--sm" id="add-media">+ Agregar media</button>
+          <button type="button" class="btn btn--ghost btn--sm admin__add-btn" id="add-media">+ Agregar media</button>
         </div>
       </div>
       <div class="admin__preview-side">
@@ -191,7 +194,7 @@
         <div class="admin__section">
           <h3>Redes sociales</h3>
           <div id="socials-list"></div>
-          <button type="button" class="btn btn--ghost btn--sm" id="add-social">+ Agregar red social</button>
+          <button type="button" class="btn btn--ghost btn--sm admin__add-btn" id="add-social">+ Agregar red social</button>
         </div>
         <div class="admin__section">
           <h3>Newsletter</h3>
