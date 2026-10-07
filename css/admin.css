@@ -59,6 +59,11 @@
 .admin__preview-content{min-height:200px;padding:var(--s-4);border-radius:var(--r-sm);background:var(--c-earth);border:var(--line-w) solid var(--c-line)}
 .admin__section{margin:var(--s-5) 0;padding:var(--s-4) 0;border-top:var(--line-w) solid var(--c-line)}
 .admin__section h3{margin:0 0 var(--s-2);font-family:var(--f-serif);font-size:var(--fs-base);font-weight:var(--fw-medium)}
+.admin__item-list{display:grid;gap:var(--s-3);margin-bottom:var(--s-3)}
+.admin__item-row{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--s-2);align-items:start}
+.admin__item-row input,.admin__item-row select,.admin__item-row textarea{width:100%}
+.admin__item-row button{margin-top:var(--s-2)}
+.admin__remove-item{color:var(--c-terra-ink);border-color:var(--c-terra-ink)}
 .admin__preview{display:grid;gap:var(--s-4)}
 .admin__preview-header{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4)}
 .admin__preview-header .admin__title{margin:0}

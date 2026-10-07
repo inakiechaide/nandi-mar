@@ -236,11 +236,11 @@ function openAreaForm(index = null) {
   form.elements.areaImage.value = area.image?.src || "";
   form.elements.areaImageAlt.value = area.image?.alt || "";
 
-  // Parse offerings to text
-  form.elements.areaOfferings.value = (area.offerings || []).map(o => `${o.title}|${o.meta}|${o.text}`).join("\n");
+  areaOfferings = [...(area.offerings || [])];
+  areaMedia = [...(area.media || [])];
 
-  // Parse media to text
-  form.elements.areaMedia.value = (area.media || []).map(m => `${m.type}|${m.kind}|${m.title}|${m.url}|${m.embed}|${m.tone}`).join("\n");
+  renderOfferingsList();
+  renderMediaList();
 
   $("[data-title]", form).textContent = index === null ? "Nueva área" : "Editar área";
   $("[data-error]", form).textContent = "";
@@ -251,22 +251,6 @@ function openAreaForm(index = null) {
 $("#area-form").addEventListener("submit", async e => {
   e.preventDefault();
   const form = e.target;
-
-  // Parse offerings from text
-  const offerings = form.elements.areaOfferings.value.split("\n")
-    .filter(line => line.trim())
-    .map(line => {
-      const [title, meta, text] = line.split("|");
-      return { title: title?.trim() || "", meta: meta?.trim() || "", text: text?.trim() || "" };
-    });
-
-  // Parse media from text
-  const media = form.elements.areaMedia.value.split("\n")
-    .filter(line => line.trim())
-    .map(line => {
-      const [type, kind, title, url, embed, tone] = line.split("|");
-      return { type: type?.trim() || "", kind: kind?.trim() || "", title: title?.trim() || "", url: url?.trim() || "", embed: embed?.trim() || "", tone: tone?.trim() || "" };
-    });
 
   const area = {
     id: form.elements.areaId.value.trim(),
@@ -279,8 +263,8 @@ $("#area-form").addEventListener("submit", async e => {
       src: form.elements.areaImage.value.trim(),
       alt: form.elements.areaImageAlt.value.trim()
     },
-    offerings,
-    media
+    offerings: areaOfferings,
+    media: areaMedia
   };
 
   const areas = [...state.config.areas];
@@ -305,19 +289,13 @@ function updateAreaPreview() {
   const preview = $("#area-preview");
   if (!form || !preview) return;
 
-  const offerings = form.elements.areaOfferings.value.split("\n")
-    .filter(line => line.trim())
-    .map(line => {
-      const [title, meta, text] = line.split("|");
-      return { title: title?.trim() || "", meta: meta?.trim() || "", text: text?.trim() || "" };
-    });
-
-  const media = form.elements.areaMedia.value.split("\n")
-    .filter(line => line.trim())
-    .map(line => {
-      const [type, kind, title, url, embed, tone] = line.split("|");
-      return { type: type?.trim() || "", kind: kind?.trim() || "", title: title?.trim() || "", url: url?.trim() || "", embed: embed?.trim() || "", tone: tone?.trim() || "" };
-    });
+  const accent = form.elements.areaAccent.value || "ocre";
+  const accentColors = {
+    ocre: "#d4a574",
+    terra: "#8b5a2b",
+    musgo: "#4a6b5a",
+    selva: "#2d5016"
+  };
 
   const area = {
     title: form.elements.areaTitle.value.trim() || "Título",
@@ -327,21 +305,21 @@ function updateAreaPreview() {
       src: form.elements.areaImage.value.trim(),
       alt: form.elements.areaImageAlt.value.trim() || "Imagen"
     },
-    offerings: offerings.length ? offerings : [{ title: "Ofrecimiento de ejemplo", meta: "Meta", text: "Texto de ejemplo" }],
-    media: media.length ? media : [{ type: "spotify", title: "Media de ejemplo" }]
+    offerings: areaOfferings.length ? areaOfferings : [{ title: "Ofrecimiento de ejemplo", meta: "Meta", text: "Texto de ejemplo" }],
+    media: areaMedia.length ? areaMedia : [{ type: "spotify", title: "Media de ejemplo" }]
   };
 
   preview.innerHTML = `
-    <div class="preview-section">
-      <h2>${esc(area.title)}</h2>
+    <div class="preview-section" style="border-left: 4px solid ${accentColors[accent]}">
+      <h2 style="color: ${accentColors[accent]}">${esc(area.title)}</h2>
       <p class="preview-subtitle">${esc(area.subtitle)}</p>
       ${area.image?.src ? `<img src="${esc(area.image.src)}" alt="${esc(area.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : '<div style="background:var(--c-earth-3);border-radius:8px;margin:20px 0;padding:40px;text-align:center;color:var(--c-mute)">Sin imagen</div>'}
       <p>${esc(area.description)}</p>
-      <h3>Offerings</h3>
+      <h3 style="color: ${accentColors[accent]}">Offerings</h3>
       <ul>
         ${area.offerings.map(o => `<li><strong>${esc(o.title)}</strong> — ${esc(o.meta)}<br>${esc(o.text)}</li>`).join("")}
       </ul>
-      <h3>Media</h3>
+      <h3 style="color: ${accentColors[accent]}">Media</h3>
       <ul>
         ${area.media.map(m => `<li>${esc(m.type)}: ${esc(m.title)}</li>`).join("")}
       </ul>
@@ -372,6 +350,8 @@ $("#areas-list").addEventListener("click", async e => {
 $("#new-area").addEventListener("click", () => openAreaForm());
 
 /* ==== CONTACT DIALOG ==== */
+let contactSocials = [];
+
 function openContactDialog() {
   const dialog = $("#contact-dialog");
   const form = $("#contact-form");
@@ -389,7 +369,8 @@ function openContactDialog() {
   form.elements.contactTitle.value = contact.title || "";
   form.elements.contactText.value = contact.text || "";
 
-  form.elements.socialsJson.value = JSON.stringify(socials, null, 2);
+  contactSocials = [...socials];
+  renderSocialsList();
 
   form.elements.newsletterEmail.value = newsletter.email || "";
   form.elements.newsletterTitle.value = newsletter.title || "";
@@ -403,29 +384,22 @@ function openContactDialog() {
 
   $("[data-error]", form).textContent = "";
   dialog.showModal();
+  updateContactPreview();
 }
 
 $("#contact-form").addEventListener("submit", async e => {
   e.preventDefault();
   const form = e.target;
-  
-  let socials;
-  try {
-    socials = JSON.parse(form.elements.socialsJson.value);
-  } catch (err) {
-    $("[data-error]", form).textContent = "El JSON de redes sociales es inválido";
-    return;
-  }
-  
+
   state.config.contact = {
     id: form.elements.contactId.value.trim(),
     navLabel: form.elements.contactNavLabel.value.trim(),
     title: form.elements.contactTitle.value.trim(),
     text: form.elements.contactText.value.trim()
   };
-  
-  state.config.socials = socials;
-  
+
+  state.config.socials = contactSocials;
+
   state.config.newsletter = {
     email: form.elements.newsletterEmail.value.trim(),
     title: form.elements.newsletterTitle.value.trim(),
@@ -437,7 +411,7 @@ $("#contact-form").addEventListener("submit", async e => {
     error: form.elements.newsletterError.value.trim(),
     note: form.elements.newsletterNote.value.trim()
   };
-  
+
   const ok = await saveConfig("Edición 'Contacto y redes'", $("[data-error]", form));
   if (ok) {
     dialog.close();
@@ -446,6 +420,171 @@ $("#contact-form").addEventListener("submit", async e => {
 });
 
 $("[data-cancel]", $("#contact-form")).addEventListener("click", () => $("#contact-dialog").close());
+
+// Live preview for contact form
+$("#contact-form").addEventListener("input", updateContactPreview);
+
+function updateContactPreview() {
+  const form = $("#contact-form");
+  const preview = $("#contact-preview");
+  if (!form || !preview) return;
+
+  const contact = {
+    title: form.elements.contactTitle.value.trim() || "Título",
+    text: form.elements.contactText.value.trim() || "Texto de contacto..."
+  };
+
+  const newsletter = {
+    title: form.elements.newsletterTitle.value.trim() || "Newsletter",
+    label: form.elements.newsletterLabel.value.trim() || "Email",
+    placeholder: form.elements.newsletterPlaceholder.value.trim() || "tu@email.com",
+    button: form.elements.newsletterButton.value.trim() || "Suscribirme",
+    note: form.elements.newsletterNote.value.trim() || "Nota de ejemplo"
+  };
+
+  preview.innerHTML = `
+    <div class="preview-section">
+      <h2>${esc(contact.title)}</h2>
+      <p>${esc(contact.text)}</p>
+      <h3>Redes sociales</h3>
+      <ul>
+        ${contactSocials.map(s => `<li>${esc(s.name)}: <a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a></li>`).join("") || "<li>Sin redes sociales</li>"}
+      </ul>
+      <h3>Newsletter</h3>
+      <div style="background:var(--c-earth-3);padding:var(--s-4);border-radius:var(--r-sm)">
+        <h4>${esc(newsletter.title)}</h4>
+        <label style="display:block;margin:var(--s-2)0">${esc(newsletter.label)}</label>
+        <input type="email" placeholder="${esc(newsletter.placeholder)}" style="width:100%;padding:var(--s-2);margin-bottom:var(--s-2);border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-earth);color:var(--c-cream)">
+        <button style="padding:var(--s-2) var(--s-4);background:var(--c-ocre);border:none;border-radius:var(--r-sm);color:var(--c-earth-2);cursor:pointer">${esc(newsletter.button)}</button>
+        <p style="margin-top:var(--s-2);font-size:var(--fs-sm);color:var(--c-mute)">${esc(newsletter.note)}</p>
+      </div>
+    </div>
+  `;
+}
+
+// Socials list management
+function renderSocialsList() {
+  const list = $("#socials-list");
+  if (!list) return;
+
+  list.innerHTML = contactSocials.map((social, index) => `
+    <div class="admin__item-row">
+      <input type="text" placeholder="Nombre" value="${esc(social.name)}" data-social-index="${index}" data-social-field="name">
+      <input type="text" placeholder="URL" value="${esc(social.url)}" data-social-index="${index}" data-social-field="url">
+      <input type="text" placeholder="Icono" value="${esc(social.icon)}" data-social-index="${index}" data-social-field="icon">
+      <button class="btn btn--danger btn--sm" type="button" data-remove-social="${index}">✕</button>
+    </div>
+  `).join("");
+}
+
+$("#socials-list").addEventListener("input", e => {
+  if (e.target.dataset.socialIndex !== undefined) {
+    const index = Number(e.target.dataset.socialIndex);
+    const field = e.target.dataset.socialField;
+    contactSocials[index][field] = e.target.value.trim();
+    updateContactPreview();
+  }
+});
+
+$("#socials-list").addEventListener("click", e => {
+  if (e.target.dataset.removeSocial !== undefined) {
+    const index = Number(e.target.dataset.removeSocial);
+    contactSocials = contactSocials.filter((_, i) => i !== index);
+    renderSocialsList();
+    updateContactPreview();
+  }
+});
+
+$("#add-social").addEventListener("click", () => {
+  contactSocials.push({ name: "", url: "", icon: "" });
+  renderSocialsList();
+  updateContactPreview();
+});
+
+// Offerings list management
+let areaOfferings = [];
+
+function renderOfferingsList() {
+  const list = $("#offerings-list");
+  if (!list) return;
+
+  list.innerHTML = areaOfferings.map((offering, index) => `
+    <div class="admin__item-row">
+      <input type="text" placeholder="Título" value="${esc(offering.title)}" data-offering-index="${index}" data-offering-field="title">
+      <input type="text" placeholder="Meta" value="${esc(offering.meta)}" data-offering-index="${index}" data-offering-field="meta">
+      <button class="btn btn--danger btn--sm" type="button" data-remove-offering="${index}">✕</button>
+      <textarea placeholder="Texto" rows="2" data-offering-index="${index}" data-offering-field="text">${esc(offering.text)}</textarea>
+    </div>
+  `).join("");
+}
+
+$("#offerings-list").addEventListener("input", e => {
+  if (e.target.dataset.offeringIndex !== undefined) {
+    const index = Number(e.target.dataset.offeringIndex);
+    const field = e.target.dataset.offeringField;
+    areaOfferings[index][field] = e.target.value.trim();
+    updateAreaPreview();
+  }
+});
+
+$("#offerings-list").addEventListener("click", e => {
+  if (e.target.dataset.removeOffering !== undefined) {
+    const index = Number(e.target.dataset.removeOffering);
+    areaOfferings = areaOfferings.filter((_, i) => i !== index);
+    renderOfferingsList();
+    updateAreaPreview();
+  }
+});
+
+$("#add-offering").addEventListener("click", () => {
+  areaOfferings.push({ title: "", meta: "", text: "" });
+  renderOfferingsList();
+  updateAreaPreview();
+});
+
+// Media list management
+let areaMedia = [];
+
+function renderMediaList() {
+  const list = $("#media-list");
+  if (!list) return;
+
+  list.innerHTML = areaMedia.map((media, index) => `
+    <div class="admin__item-row" style="grid-template-columns:repeat(3,1fr) auto">
+      <input type="text" placeholder="Tipo" value="${esc(media.type)}" data-media-index="${index}" data-media-field="type">
+      <input type="text" placeholder="Título" value="${esc(media.title)}" data-media-index="${index}" data-media-field="title">
+      <input type="text" placeholder="URL" value="${esc(media.url)}" data-media-index="${index}" data-media-field="url">
+      <button class="btn btn--danger btn--sm" type="button" data-remove-media="${index}">✕</button>
+      <input type="text" placeholder="Kind" value="${esc(media.kind)}" data-media-index="${index}" data-media-field="kind">
+      <input type="text" placeholder="Embed" value="${esc(media.embed)}" data-media-index="${index}" data-media-field="embed">
+      <input type="text" placeholder="Tone" value="${esc(media.tone)}" data-media-index="${index}" data-media-field="tone">
+    </div>
+  `).join("");
+}
+
+$("#media-list").addEventListener("input", e => {
+  if (e.target.dataset.mediaIndex !== undefined) {
+    const index = Number(e.target.dataset.mediaIndex);
+    const field = e.target.dataset.mediaField;
+    areaMedia[index][field] = e.target.value.trim();
+    updateAreaPreview();
+  }
+});
+
+$("#media-list").addEventListener("click", e => {
+  if (e.target.dataset.removeMedia !== undefined) {
+    const index = Number(e.target.dataset.removeMedia);
+    areaMedia = areaMedia.filter((_, i) => i !== index);
+    renderMediaList();
+    updateAreaPreview();
+  }
+});
+
+$("#add-media").addEventListener("click", () => {
+  areaMedia.push({ type: "", kind: "", title: "", url: "", embed: "", tone: "" });
+  renderMediaList();
+  updateAreaPreview();
+});
 
 /* ==== INIT ==== */
 let initialized = false;

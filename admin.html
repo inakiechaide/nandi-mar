@@ -155,13 +155,13 @@
         </div>
         <div class="admin__section">
           <h3>Offerings</h3>
-          <p class="admin__meta">Cada línea: título|meta|texto</p>
-          <label class="field field--wide"><textarea name="areaOfferings" rows="4" placeholder="Raíz de Agua|Álbum • 2026|Nueve canciones..."></textarea></label>
+          <div id="offerings-list"></div>
+          <button type="button" class="btn btn--ghost btn--sm" id="add-offering">+ Agregar offering</button>
         </div>
         <div class="admin__section">
           <h3>Media</h3>
-          <p class="admin__meta">Cada línea: tipo|kind|título|url|embed|tone</p>
-          <label class="field field--wide"><textarea name="areaMedia" rows="4" placeholder="spotify|Álbum en Spotify|Raíz de Agua|https://...|https://...|tierra"></textarea></label>
+          <div id="media-list"></div>
+          <button type="button" class="btn btn--ghost btn--sm" id="add-media">+ Agregar media</button>
         </div>
       </div>
       <div class="admin__preview-side">
@@ -177,24 +177,41 @@
   </form>
 </dialog>
 
-<dialog id="contact-dialog" class="admin__dialog">
+<dialog id="contact-dialog" class="admin__dialog admin__dialog--xl">
   <form id="contact-form" method="dialog" novalidate>
     <h2 class="admin__title">Editar "Contacto y redes"</h2>
-    <div class="grid">
-      <label class="field"><span>ID</span><input name="contactId" required></label>
-      <label class="field"><span>Label de navegación</span><input name="contactNavLabel" required></label>
-      <label class="field field--wide"><span>Título</span><input name="contactTitle" required></label>
-      <label class="field field--wide"><span>Texto</span><textarea name="contactText" rows="3"></textarea></label>
-      <label class="field field--wide"><span>Redes sociales (JSON)</span><textarea name="socialsJson" rows="6"></textarea></label>
-      <label class="field field--wide"><span>Email newsletter</span><input name="newsletterEmail"></label>
-      <label class="field field--wide"><span>Título newsletter</span><input name="newsletterTitle"></label>
-      <label class="field field--wide"><span>Label newsletter</span><input name="newsletterLabel"></label>
-      <label class="field field--wide"><span>Placeholder newsletter</span><input name="newsletterPlaceholder"></label>
-      <label class="field field--wide"><span>Botón newsletter</span><input name="newsletterButton"></label>
-      <label class="field field--wide"><span>Estado enviando</span><input name="newsletterSending"></label>
-      <label class="field field--wide"><span>Mensaje éxito</span><input name="newsletterSuccess"></label>
-      <label class="field field--wide"><span>Mensaje error</span><input name="newsletterError"></label>
-      <label class="field field--wide"><span>Nota newsletter</span><textarea name="newsletterNote" rows="2"></textarea></label>
+    <div class="admin__split">
+      <div class="admin__form-side">
+        <div class="grid">
+          <label class="field"><span>ID</span><input name="contactId" required></label>
+          <label class="field"><span>Label de navegación</span><input name="contactNavLabel" required></label>
+          <label class="field field--wide"><span>Título</span><input name="contactTitle" required></label>
+          <label class="field field--wide"><span>Texto</span><textarea name="contactText" rows="3"></textarea></label>
+        </div>
+        <div class="admin__section">
+          <h3>Redes sociales</h3>
+          <div id="socials-list"></div>
+          <button type="button" class="btn btn--ghost btn--sm" id="add-social">+ Agregar red social</button>
+        </div>
+        <div class="admin__section">
+          <h3>Newsletter</h3>
+          <div class="grid">
+            <label class="field field--wide"><span>Email</span><input name="newsletterEmail"></label>
+            <label class="field field--wide"><span>Título</span><input name="newsletterTitle"></label>
+            <label class="field field--wide"><span>Label</span><input name="newsletterLabel"></label>
+            <label class="field field--wide"><span>Placeholder</span><input name="newsletterPlaceholder"></label>
+            <label class="field field--wide"><span>Botón</span><input name="newsletterButton"></label>
+            <label class="field field--wide"><span>Estado enviando</span><input name="newsletterSending"></label>
+            <label class="field field--wide"><span>Mensaje éxito</span><input name="newsletterSuccess"></label>
+            <label class="field field--wide"><span>Mensaje error</span><input name="newsletterError"></label>
+            <label class="field field--wide"><span>Nota</span><textarea name="newsletterNote" rows="2"></textarea></label>
+          </div>
+        </div>
+      </div>
+      <div class="admin__preview-side">
+        <h3 class="admin__preview-title">Vista previa</h3>
+        <div id="contact-preview" class="admin__preview-content"></div>
+      </div>
     </div>
     <p class="admin__error" data-error></p>
     <div class="admin__actions">
