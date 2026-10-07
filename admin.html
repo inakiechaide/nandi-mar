@@ -89,25 +89,32 @@
   </form>
 </dialog>
 
-<dialog id="about-dialog" class="admin__dialog admin__dialog--lg">
+<dialog id="about-dialog" class="admin__dialog admin__dialog--xl">
   <form id="about-form" method="dialog" novalidate>
     <h2 class="admin__title">Editar "Sobre mí"</h2>
-    <div class="grid">
-      <label class="field"><span>ID</span><input name="aboutId" required></label>
-      <label class="field"><span>Label de navegación</span><input name="aboutNavLabel" required></label>
-      <label class="field field--wide"><span>Título</span><input name="aboutTitle" required></label>
-      <label class="field field--wide"><span>Lead</span><textarea name="aboutLead" rows="2"></textarea></label>
-      <label class="field field--wide"><span>Párrafos (separados por doble salto de línea)</span><textarea name="aboutParagraphs" rows="5"></textarea></label>
-      <label class="field field--wide"><span>Quote</span><textarea name="aboutQuote" rows="2"></textarea></label>
-      <label class="field field--wide"><span>Imagen (URL o base64)</span>
-        <textarea name="aboutImage" rows="2" placeholder="https://... o data:image/..."></textarea>
-        <small class="admin__meta">Para base64: subí la imagen a un servicio como <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a>, copiá el resultado que empieza con "data:image/jpeg;base64,..."</small>
-      </label>
-      <label class="field field--wide"><span>Alt de imagen</span><input name="aboutImageAlt"></label>
+    <div class="admin__split">
+      <div class="admin__form-side">
+        <div class="grid">
+          <label class="field"><span>ID</span><input name="aboutId" required></label>
+          <label class="field"><span>Label de navegación</span><input name="aboutNavLabel" required></label>
+          <label class="field field--wide"><span>Título</span><input name="aboutTitle" required></label>
+          <label class="field field--wide"><span>Lead</span><textarea name="aboutLead" rows="2"></textarea></label>
+          <label class="field field--wide"><span>Párrafos (uno por línea)</span><textarea name="aboutParagraphs" rows="5"></textarea></label>
+          <label class="field field--wide"><span>Quote</span><textarea name="aboutQuote" rows="2"></textarea></label>
+          <label class="field field--wide"><span>Imagen (URL o base64)</span>
+            <textarea name="aboutImage" rows="2" placeholder="https://... o data:image/..."></textarea>
+            <small class="admin__meta">💡 Convertí tu imagen a base64 en <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a></small>
+          </label>
+          <label class="field field--wide"><span>Alt de imagen</span><input name="aboutImageAlt"></label>
+        </div>
+      </div>
+      <div class="admin__preview-side">
+        <h3 class="admin__preview-title">Vista previa</h3>
+        <div id="about-preview" class="admin__preview-content"></div>
+      </div>
     </div>
     <p class="admin__error" data-error></p>
     <div class="admin__actions">
-      <button class="btn btn--ghost" type="button" data-preview>Preview</button>
       <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
       <button class="btn" type="submit" value="save">Guardar</button>
     </div>
@@ -123,54 +130,51 @@
   </div>
 </dialog>
 
-<dialog id="area-dialog" class="admin__dialog admin__dialog--lg">
+<dialog id="area-dialog" class="admin__dialog admin__dialog--xl">
   <form id="area-form" method="dialog" novalidate>
     <h2 class="admin__title" data-title>Nueva área</h2>
-    <div class="grid">
-      <label class="field"><span>ID *</span><input name="areaId" required></label>
-      <label class="field"><span>Label de navegación *</span><input name="areaNavLabel" required></label>
-      <label class="field field--wide"><span>Título *</span><input name="areaTitle" required></label>
-      <label class="field"><span>Acento</span><select name="areaAccent">
-        <option value="ocre">Ocre</option>
-        <option value="terra">Tierra</option>
-        <option value="musgo">Musgo</option>
-        <option value="selva">Selva</option>
-      </select></label>
-      <label class="field field--wide"><span>Subtítulo</span><input name="areaSubtitle"></label>
-      <label class="field field--wide"><span>Descripción</span><textarea name="areaDescription" rows="4"></textarea></label>
-      <label class="field field--wide"><span>Imagen (URL o base64)</span>
-        <textarea name="areaImage" rows="2" placeholder="https://... o data:image/..."></textarea>
-        <small class="admin__meta">Para base64: subí la imagen a un servicio como <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a>, copiá el resultado que empieza con "data:image/jpeg;base64,..."</small>
-      </label>
-      <label class="field field--wide"><span>Alt de imagen</span><input name="areaImageAlt"></label>
-    </div>
-    <div class="admin__section">
-      <h3>Offerings</h3>
-      <p class="admin__meta">Cada línea: título|meta|texto</p>
-      <label class="field field--wide"><textarea name="areaOfferings" rows="4" placeholder="Raíz de Agua|Álbum • 2026|Nueve canciones..."></textarea></label>
-    </div>
-    <div class="admin__section">
-      <h3>Media</h3>
-      <p class="admin__meta">Cada línea: tipo|kind|título|url|embed|tone</p>
-      <label class="field field--wide"><textarea name="areaMedia" rows="4" placeholder="spotify|Álbum en Spotify|Raíz de Agua|https://...|https://...|tierra"></textarea></label>
+    <div class="admin__split">
+      <div class="admin__form-side">
+        <div class="grid">
+          <label class="field"><span>ID *</span><input name="areaId" required></label>
+          <label class="field"><span>Label de navegación *</span><input name="areaNavLabel" required></label>
+          <label class="field field--wide"><span>Título *</span><input name="areaTitle" required></label>
+          <label class="field"><span>Acento</span><select name="areaAccent">
+            <option value="ocre">Ocre</option>
+            <option value="terra">Tierra</option>
+            <option value="musgo">Musgo</option>
+            <option value="selva">Selva</option>
+          </select></label>
+          <label class="field field--wide"><span>Subtítulo</span><input name="areaSubtitle"></label>
+          <label class="field field--wide"><span>Descripción</span><textarea name="areaDescription" rows="4"></textarea></label>
+          <label class="field field--wide"><span>Imagen (URL o base64)</span>
+            <textarea name="areaImage" rows="2" placeholder="https://... o data:image/..."></textarea>
+            <small class="admin__meta">💡 Convertí tu imagen a base64 en <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a></small>
+          </label>
+          <label class="field field--wide"><span>Alt de imagen</span><input name="areaImageAlt"></label>
+        </div>
+        <div class="admin__section">
+          <h3>Offerings</h3>
+          <p class="admin__meta">Cada línea: título|meta|texto</p>
+          <label class="field field--wide"><textarea name="areaOfferings" rows="4" placeholder="Raíz de Agua|Álbum • 2026|Nueve canciones..."></textarea></label>
+        </div>
+        <div class="admin__section">
+          <h3>Media</h3>
+          <p class="admin__meta">Cada línea: tipo|kind|título|url|embed|tone</p>
+          <label class="field field--wide"><textarea name="areaMedia" rows="4" placeholder="spotify|Álbum en Spotify|Raíz de Agua|https://...|https://...|tierra"></textarea></label>
+        </div>
+      </div>
+      <div class="admin__preview-side">
+        <h3 class="admin__preview-title">Vista previa</h3>
+        <div id="area-preview" class="admin__preview-content"></div>
+      </div>
     </div>
     <p class="admin__error" data-error></p>
     <div class="admin__actions">
-      <button class="btn btn--ghost" type="button" data-preview>Preview</button>
       <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
       <button class="btn" type="submit" value="save">Guardar</button>
     </div>
   </form>
-</dialog>
-
-<dialog id="preview-dialog" class="admin__dialog admin__dialog--lg">
-  <div class="admin__preview">
-    <div class="admin__preview-header">
-      <h2 class="admin__title">Preview</h2>
-      <button class="btn btn--ghost btn--sm" type="button" data-close-preview>Cerrar</button>
-    </div>
-    <div id="preview-content"></div>
-  </div>
 </dialog>
 
 <dialog id="contact-dialog" class="admin__dialog">

@@ -126,10 +126,11 @@ function openAboutDialog() {
   form.elements.aboutImage.value = about.image?.src || "";
   form.elements.aboutImageAlt.value = about.image?.alt || "";
 
-  form.elements.aboutParagraphs.value = (about.paragraphs || []).join("\n\n");
+  form.elements.aboutParagraphs.value = (about.paragraphs || []).join("\n");
 
   $("[data-error]", form).textContent = "";
   dialog.showModal();
+  updateAboutPreview();
 }
 
 $("#about-form").addEventListener("submit", async e => {
@@ -159,23 +160,36 @@ $("#about-form").addEventListener("submit", async e => {
 
 $("[data-cancel]", $("#about-form")).addEventListener("click", () => $("#about-dialog").close());
 
-$("[data-preview]", $("#about-form")).addEventListener("click", () => {
+// Live preview for about form
+$("#about-form").addEventListener("input", updateAboutPreview);
+
+function updateAboutPreview() {
   const form = $("#about-form");
-  const paragraphs = form.elements.aboutParagraphs.value.split("\n\n").filter(p => p.trim());
+  const preview = $("#about-preview");
+  if (!form || !preview) return;
+
+  const paragraphs = form.elements.aboutParagraphs.value.split("\n").filter(p => p.trim());
   const about = {
-    id: form.elements.aboutId.value.trim(),
-    navLabel: form.elements.aboutNavLabel.value.trim(),
-    title: form.elements.aboutTitle.value.trim(),
-    lead: form.elements.aboutLead.value.trim(),
-    paragraphs: paragraphs,
-    quote: form.elements.aboutQuote.value.trim(),
+    title: form.elements.aboutTitle.value.trim() || "Título",
+    lead: form.elements.aboutLead.value.trim() || "Lead...",
+    paragraphs: paragraphs.length ? paragraphs : ["Párrafo de ejemplo"],
+    quote: form.elements.aboutQuote.value.trim() || "Quote de ejemplo",
     image: {
       src: form.elements.aboutImage.value.trim(),
-      alt: form.elements.aboutImageAlt.value.trim()
+      alt: form.elements.aboutImageAlt.value.trim() || "Imagen"
     }
   };
-  showPreview("about", about);
-});
+
+  preview.innerHTML = `
+    <div class="preview-section">
+      <h2>${esc(about.title)}</h2>
+      <p class="preview-lead">${esc(about.lead)}</p>
+      ${about.image?.src ? `<img src="${esc(about.image.src)}" alt="${esc(about.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : '<div style="background:var(--c-earth-3);border-radius:8px;margin:20px 0;padding:40px;text-align:center;color:var(--c-mute)">Sin imagen</div>'}
+      ${about.paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}
+      <blockquote class="preview-quote">${esc(about.quote)}</blockquote>
+    </div>
+  `;
+}
 
 /* ==== AREAS DIALOG ==== */
 let editingAreaIndex = null;
@@ -231,6 +245,7 @@ function openAreaForm(index = null) {
   $("[data-title]", form).textContent = index === null ? "Nueva área" : "Editar área";
   $("[data-error]", form).textContent = "";
   dialog.showModal();
+  updateAreaPreview();
 }
 
 $("#area-form").addEventListener("submit", async e => {
@@ -282,8 +297,14 @@ $("#area-form").addEventListener("submit", async e => {
 
 $("[data-cancel]", $("#area-form")).addEventListener("click", () => $("#area-dialog").close());
 
-$("[data-preview]", $("#area-form")).addEventListener("click", () => {
+// Live preview for area form
+$("#area-form").addEventListener("input", updateAreaPreview);
+
+function updateAreaPreview() {
   const form = $("#area-form");
+  const preview = $("#area-preview");
+  if (!form || !preview) return;
+
   const offerings = form.elements.areaOfferings.value.split("\n")
     .filter(line => line.trim())
     .map(line => {
@@ -299,21 +320,34 @@ $("[data-preview]", $("#area-form")).addEventListener("click", () => {
     });
 
   const area = {
-    id: form.elements.areaId.value.trim(),
-    navLabel: form.elements.areaNavLabel.value.trim(),
-    title: form.elements.areaTitle.value.trim(),
-    accent: form.elements.areaAccent.value,
-    subtitle: form.elements.areaSubtitle.value.trim(),
-    description: form.elements.areaDescription.value.trim(),
+    title: form.elements.areaTitle.value.trim() || "Título",
+    subtitle: form.elements.areaSubtitle.value.trim() || "Subtítulo",
+    description: form.elements.areaDescription.value.trim() || "Descripción...",
     image: {
       src: form.elements.areaImage.value.trim(),
-      alt: form.elements.areaImageAlt.value.trim()
+      alt: form.elements.areaImageAlt.value.trim() || "Imagen"
     },
-    offerings,
-    media
+    offerings: offerings.length ? offerings : [{ title: "Ofrecimiento de ejemplo", meta: "Meta", text: "Texto de ejemplo" }],
+    media: media.length ? media : [{ type: "spotify", title: "Media de ejemplo" }]
   };
-  showPreview("area", area);
-});
+
+  preview.innerHTML = `
+    <div class="preview-section">
+      <h2>${esc(area.title)}</h2>
+      <p class="preview-subtitle">${esc(area.subtitle)}</p>
+      ${area.image?.src ? `<img src="${esc(area.image.src)}" alt="${esc(area.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : '<div style="background:var(--c-earth-3);border-radius:8px;margin:20px 0;padding:40px;text-align:center;color:var(--c-mute)">Sin imagen</div>'}
+      <p>${esc(area.description)}</p>
+      <h3>Offerings</h3>
+      <ul>
+        ${area.offerings.map(o => `<li><strong>${esc(o.title)}</strong> — ${esc(o.meta)}<br>${esc(o.text)}</li>`).join("")}
+      </ul>
+      <h3>Media</h3>
+      <ul>
+        ${area.media.map(m => `<li>${esc(m.type)}: ${esc(m.title)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
 
 $("#areas-list").addEventListener("click", async e => {
   const edit = e.target.closest("[data-edit-area]");
@@ -412,48 +446,6 @@ $("#contact-form").addEventListener("submit", async e => {
 });
 
 $("[data-cancel]", $("#contact-form")).addEventListener("click", () => $("#contact-dialog").close());
-
-/* ==== PREVIEW ==== */
-function showPreview(type, data) {
-  const dialog = $("#preview-dialog");
-  const content = $("#preview-content");
-  if (!dialog || !content) return;
-
-  let html = "";
-  if (type === "about") {
-    html = `
-      <div class="preview-section">
-        <h2>${esc(data.title)}</h2>
-        <p class="preview-lead">${esc(data.lead)}</p>
-        ${data.image?.src ? `<img src="${esc(data.image.src)}" alt="${esc(data.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : ""}
-        ${data.paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}
-        <blockquote class="preview-quote">${esc(data.quote)}</blockquote>
-      </div>
-    `;
-  } else if (type === "area") {
-    html = `
-      <div class="preview-section">
-        <h2>${esc(data.title)}</h2>
-        <p class="preview-subtitle">${esc(data.subtitle)}</p>
-        ${data.image?.src ? `<img src="${esc(data.image.src)}" alt="${esc(data.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : ""}
-        <p>${esc(data.description)}</p>
-        <h3>Offerings</h3>
-        <ul>
-          ${data.offerings.map(o => `<li><strong>${esc(o.title)}</strong> — ${esc(o.meta)}<br>${esc(o.text)}</li>`).join("")}
-        </ul>
-        <h3>Media</h3>
-        <ul>
-          ${data.media.map(m => `<li>${esc(m.type)}: ${esc(m.title)}</li>`).join("")}
-        </ul>
-      </div>
-    `;
-  }
-
-  content.innerHTML = html;
-  dialog.showModal();
-}
-
-$("[data-close-preview]").addEventListener("click", () => $("#preview-dialog").close());
 
 /* ==== INIT ==== */
 let initialized = false;
