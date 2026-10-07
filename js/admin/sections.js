@@ -310,10 +310,10 @@ function updateAreaPreview() {
 
   const accent = form.elements.areaAccent.value || "ocre";
   const accentColors = {
-    ocre: "#d4a574",
-    terra: "#8b5a2b",
-    musgo: "#4a6b5a",
-    selva: "#2d5016"
+    ocre: "var(--c-ocre-ink)",
+    terra: "var(--c-terra-ink)",
+    musgo: "var(--c-musgo-ink)",
+    selva: "var(--c-musgo-ink)"
   };
 
   const area = {
@@ -328,11 +328,14 @@ function updateAreaPreview() {
     media: areaMedia.length ? areaMedia : [{ type: "spotify", title: "Media de ejemplo" }]
   };
 
+  // Update preview container background
+  preview.className = "admin__preview-content admin__preview-content--" + accent;
+
   preview.innerHTML = `
     <div class="preview-section" style="border-left: 4px solid ${accentColors[accent]}">
       <h2 style="color: ${accentColors[accent]}">${esc(area.title)}</h2>
       <p class="preview-subtitle">${esc(area.subtitle)}</p>
-      ${area.image?.src ? `<img src="${esc(area.image.src)}" alt="${esc(area.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : '<div style="background:var(--c-earth-3);border-radius:8px;margin:20px 0;padding:40px;text-align:center;color:var(--c-mute)">Sin imagen</div>'}
+      ${area.image?.src ? `<img src="${esc(area.image.src)}" alt="${esc(area.image.alt)}">` : '<div style="background:var(--c-earth-3);border-radius:var(--r-md);margin:var(--s-6) 0;padding:var(--s-8);text-align:center;color:var(--c-mute)">Sin imagen</div>'}
       <p>${esc(area.description)}</p>
       <h3 style="color: ${accentColors[accent]}">Offerings</h3>
       <ul>

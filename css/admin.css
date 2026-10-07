@@ -7,6 +7,28 @@
 .admin__tag{flex:1;line-height:var(--lh-tight);color:var(--c-mute);font-size:var(--fs-sm);letter-spacing:var(--ls-soft)}
 .admin__main{padding-block:var(--s-7) var(--s-9)}
 .admin__title{font-family:var(--f-display);font-weight:var(--fw-regular);font-size:var(--fs-h3);letter-spacing:var(--ls-soft);margin:0 0 var(--s-5)}
+
+/* ==== PREVIEW (usando estilos reales del sitio) ==== */
+.admin__preview-content{padding:var(--s-6);background:var(--c-earth);border-radius:var(--r-md);border:var(--line-w) solid var(--c-line);min-height:300px;position:relative;overflow:hidden}
+.admin__preview-content::before{content:"";position:absolute;inset:0;z-index:0;background:var(--noise);opacity:var(--grain-alpha);mix-blend-mode:overlay;pointer-events:none}
+.admin__preview-content--ocre{background:var(--grad-selva)}
+.admin__preview-content--terra{background:var(--grad-tierra)}
+.admin__preview-content--musgo{background:var(--grad-musgo)}
+.admin__preview-content--selva{background:var(--grad-fuego)}
+.preview-section{color:var(--c-cream);font-family:var(--f-body);font-weight:var(--fw-light);line-height:var(--lh-body);position:relative;z-index:1}
+.preview-section h2{font-family:var(--f-display);font-weight:var(--fw-regular);font-size:var(--fs-h2);letter-spacing:var(--ls-soft);margin:0 0 var(--s-5);line-height:var(--lh-tight)}
+.preview-section h3{font-family:var(--f-display);font-weight:var(--fw-regular);font-size:var(--fs-h3);letter-spacing:var(--ls-soft);margin:var(--s-6) 0 var(--s-4);line-height:var(--lh-tight)}
+.preview-section h4{font-family:var(--f-display);font-weight:var(--fw-regular);font-size:var(--fs-lg);margin:var(--s-4) 0 0;line-height:var(--lh-tight)}
+.preview-lead{font-family:var(--f-serif);font-size:var(--fs-lg);font-weight:var(--fw-medium);color:var(--c-cream-2);margin:var(--s-5) 0;line-height:var(--lh-serif)}
+.preview-subtitle{font-family:var(--f-serif);font-size:var(--fs-base);font-style:italic;color:var(--c-cream-2);margin:var(--s-4) 0}
+.preview-quote{font-family:var(--f-serif);font-size:var(--fs-lg);font-style:italic;font-weight:var(--fw-medium);border-left:4px solid var(--c-ocre);padding-left:var(--s-5);margin:var(--s-6) 0;color:var(--c-cream-2);line-height:var(--lh-serif)}
+.preview-section p{margin:var(--s-4) 0;max-width:var(--measure)}
+.preview-section ul{list-style:none;padding:0;margin:var(--s-5) 0}
+.preview-section li{padding:var(--s-3) 0;border-bottom:1px solid var(--c-line)}
+.preview-section li:last-child{border-bottom:none}
+.preview-section a{color:var(--c-ocre-ink);text-decoration:underline;text-underline-offset:4px}
+.preview-section a:hover{color:var(--c-cream)}
+.preview-section img{max-width:100%;height:auto;border-radius:var(--r-md);margin:var(--s-6) 0;display:block;object-fit:cover}
 .admin__card{display:grid;gap:var(--s-4);max-width:var(--input-w);margin:var(--s-6) auto;padding:var(--s-6);border:var(--line-w) solid var(--c-line);border-radius:var(--r-md);background:var(--c-earth-2);box-shadow:var(--sh-warm)}
 .admin__card .admin__title{margin:0}
 .admin__muted{color:var(--c-mute);font-size:var(--fs-sm);margin:0}
@@ -72,10 +94,10 @@
 .admin__color-option{width:32px;height:32px;border-radius:50%;border:2px solid var(--c-line);cursor:pointer;transition:all var(--t-fast)}
 .admin__color-option:hover{transform:scale(1.1)}
 .admin__color-option.selected{border-color:var(--c-cream);box-shadow:0 0 0 2px var(--c-earth)}
-.admin__color-option[data-color="ocre"]{background:#d4a574}
-.admin__color-option[data-color="terra"]{background:#8b5a2b}
-.admin__color-option[data-color="musgo"]{background:#4a6b5a}
-.admin__color-option[data-color="selva"]{background:#2d5016}
+.admin__color-option[data-color="ocre"]{background:var(--c-ocre)}
+.admin__color-option[data-color="terra"]{background:var(--c-terra)}
+.admin__color-option[data-color="musgo"]{background:var(--c-musgo)}
+.admin__color-option[data-color="selva"]{background:var(--c-jungle)}
 .admin__preview{display:grid;gap:var(--s-4)}
 .admin__preview-header{display:flex;align-items:center;justify-content:space-between;gap:var(--s-4)}
 .admin__preview-header .admin__title{margin:0}
