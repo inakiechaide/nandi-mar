@@ -131,6 +131,12 @@ function openAboutDialog() {
   $("[data-error]", form).textContent = "";
   dialog.showModal();
   updateAboutPreview();
+
+  // Agregar listener al botón cancelar dinámicamente
+  const cancelBtn = form.querySelector('[data-cancel]');
+  if (cancelBtn) {
+    cancelBtn.onclick = () => dialog.close();
+  }
 }
 
 $("#about-form").addEventListener("submit", async e => {
@@ -247,6 +253,12 @@ function openAreaForm(index = null) {
   $("[data-error]", form).textContent = "";
   dialog.showModal();
   updateAreaPreview();
+
+  // Agregar listener al botón cancelar dinámicamente
+  const cancelBtn = form.querySelector('[data-cancel]');
+  if (cancelBtn) {
+    cancelBtn.onclick = () => dialog.close();
+  }
 }
 
 $("#area-form").addEventListener("submit", async e => {
@@ -279,8 +291,6 @@ $("#area-form").addEventListener("submit", async e => {
     renderSections();
   }
 });
-
-$("#area-form [data-cancel]").addEventListener("click", () => $("#area-dialog").close());
 
 // Live preview for area form
 $("#area-form").addEventListener("input", updateAreaPreview);
@@ -407,6 +417,12 @@ function openContactDialog() {
   $("[data-error]", form).textContent = "";
   dialog.showModal();
   updateContactPreview();
+
+  // Agregar listener al botón cancelar dinámicamente
+  const cancelBtn = form.querySelector('[data-cancel]');
+  if (cancelBtn) {
+    cancelBtn.onclick = () => dialog.close();
+  }
 }
 
 $("#contact-form").addEventListener("submit", async e => {
