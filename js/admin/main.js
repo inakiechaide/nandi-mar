@@ -68,24 +68,6 @@ $("#nav-sections").addEventListener("click", async () => {
   }
 });
 
-$("#sync-btn").addEventListener("click", async () => {
-  const btn = $("#sync-btn");
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Sincronizando...";
-  try {
-    const data = await api("sync", { method: "POST" });
-    toast("✓ " + data.message);
-    // Recargar la página para que los cambios surtan efecto
-    setTimeout(() => window.location.reload(), 1500);
-  } catch (err) {
-    toast("Error al sincronizar: " + err.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
-});
-
 /* ==== LISTADO ==== */
 const isPastEvent = ev => toDate(ev.endDate || ev.date) < TODAY;
 
@@ -143,6 +125,13 @@ function fillSelects() {
   $("#filter-area").innerHTML = `<option value="all">Todas</option>${areas}`;
   form.elements.status.innerHTML = Object.entries(UI.status).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join("");
 }
+
+// Secciones avisa cuando cambian las áreas, así los selectores no quedan viejos.
+document.addEventListener("config:changed", () => {
+  const filter = $("#filter-area").value;
+  fillSelects();
+  if ([...$("#filter-area").options].some(o => o.value === filter)) $("#filter-area").value = filter;
+});
 
 function openForm(index = null) {
   editing = index;

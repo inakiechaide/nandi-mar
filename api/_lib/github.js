@@ -6,11 +6,11 @@ class GitHubError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
-async function request(path, { method = "GET", body } = {}) {
+async function request(path, { method = "GET", body, raw = false } = {}) {
   const res = await fetch(`${API}${path}`, {
     method,
     headers: {
-      Accept: "application/vnd.github+json",
+      Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json",
       Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
       "X-GitHub-Api-Version": "2022-11-28",
       "User-Agent": "nandi-mar-admin",
@@ -18,25 +18,34 @@ async function request(path, { method = "GET", body } = {}) {
     },
     body: body ? JSON.stringify(body) : undefined
   });
+  if (raw && res.ok) return res.text();
   const json = await res.json().catch(() => null);
   if (!res.ok) throw new GitHubError(res.status, json?.message || `GitHub respondió ${res.status}`);
   return json;
 }
 
-const contentsPath = path => `/repos/${REPO}/contents/${path}`;
+const contentsPath = path => `/repos/${REPO}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;
 
 async function readFile(path) {
   try {
-    const file = await request(`${contentsPath(path)}?ref=${encodeURIComponent(BRANCH)}`);
-    return { sha: file.sha, text: Buffer.from(file.content, "base64").toString("utf8") };
+    const url = `${contentsPath(path)}?ref=${encodeURIComponent(BRANCH)}`;
+    const file = await request(url);
+    if (Array.isArray(file) || file.type !== "file") return { sha: null, text: null };
+    // Para archivos de más de 1 MB GitHub devuelve "content" vacío: hay que pedir el contenido crudo.
+    const text = file.content || !file.size
+      ? Buffer.from(file.content || "", "base64").toString("utf8")
+      : await request(url, { raw: true });
+    return { sha: file.sha, text };
   } catch (err) {
     if (err.status === 404) return { sha: null, text: null };
     throw err;
   }
 }
 
-async function writeFile(path, text, sha, message) {
-  const body = { message, content: Buffer.from(text, "utf8").toString("base64"), branch: BRANCH, ...(sha ? { sha } : {}) };
+// `content` puede ser texto o un Buffer (imágenes).
+async function writeFile(path, content, sha, message) {
+  const data = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
+  const body = { message, content: data.toString("base64"), branch: BRANCH, ...(sha ? { sha } : {}) };
   const res = await request(contentsPath(path), { method: "PUT", body });
   return res.content.sha;
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>Admin de eventos | Nandi Mar</title>
+<title>Admin | Nandi Mar</title>
 <meta name="theme-color" content="#1E1712">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🌿%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,7 +60,6 @@
   <section id="view-sections" class="admin__view" hidden>
     <div class="admin__head">
       <h1 class="admin__title">Secciones</h1>
-      <button id="sync-btn" class="btn btn--ghost btn--sm" type="button">🔄 Sincronizar con GitHub</button>
     </div>
     <ul id="sections-list" class="admin__list"></ul>
   </section>
@@ -102,10 +101,13 @@
           <label class="field field--wide"><span>Lead</span><textarea name="aboutLead" rows="2"></textarea></label>
           <label class="field field--wide"><span>Párrafos (uno por línea)</span><textarea name="aboutParagraphs" rows="5"></textarea></label>
           <label class="field field--wide"><span>Quote</span><textarea name="aboutQuote" rows="2"></textarea></label>
-          <label class="field field--wide"><span>Imagen (URL o base64)</span>
-            <textarea name="aboutImage" rows="2" placeholder="https://... o data:image/..."></textarea>
-            <small class="admin__meta">💡 Convertí tu imagen a base64 en <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a></small>
-          </label>
+          <div class="field field--wide"><span>Imagen</span>
+            <div class="admin__image">
+              <input name="aboutImage" placeholder="img/foto.jpg o https://…" aria-label="Ruta o URL de la imagen">
+              <label class="btn btn--ghost btn--sm"><span>Subir imagen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-upload="aboutImage" hidden></label>
+            </div>
+            <small class="admin__meta">Se achica sola antes de subirse. Dejalo vacío para usar el fondo decorativo.</small>
+          </div>
           <label class="field field--wide"><span>Alt de imagen</span><input name="aboutImageAlt"></label>
         </div>
       </div>
@@ -145,16 +147,18 @@
               <div class="admin__color-option" data-color="ocre" title="Ocre"></div>
               <div class="admin__color-option" data-color="terra" title="Tierra"></div>
               <div class="admin__color-option" data-color="musgo" title="Musgo"></div>
-              <div class="admin__color-option" data-color="selva" title="Selva"></div>
             </div>
             <input type="hidden" name="areaAccent" value="ocre">
           </label>
           <label class="field field--wide"><span>Subtítulo</span><input name="areaSubtitle"></label>
           <label class="field field--wide"><span>Descripción</span><textarea name="areaDescription" rows="4"></textarea></label>
-          <label class="field field--wide"><span>Imagen (URL o base64)</span>
-            <textarea name="areaImage" rows="2" placeholder="https://... o data:image/..."></textarea>
-            <small class="admin__meta">💡 Convertí tu imagen a base64 en <a href="https://imgbb.com/" target="_blank">imgbb</a> o <a href="https://cloudconvert.com/image-to-base64" target="_blank">cloudconvert</a></small>
-          </label>
+          <div class="field field--wide"><span>Imagen</span>
+            <div class="admin__image">
+              <input name="areaImage" placeholder="img/foto.jpg o https://…" aria-label="Ruta o URL de la imagen">
+              <label class="btn btn--ghost btn--sm"><span>Subir imagen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-upload="areaImage" hidden></label>
+            </div>
+            <small class="admin__meta">Se achica sola antes de subirse. Dejalo vacío para usar el fondo decorativo.</small>
+          </div>
           <label class="field field--wide"><span>Alt de imagen</span><input name="areaImageAlt"></label>
         </div>
         <div class="admin__section">

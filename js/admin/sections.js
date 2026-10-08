@@ -1,9 +1,15 @@
 // js/admin/sections.js
+import { CONFIG } from '../modules/config.js';
 import * as U from '../modules/utils.js';
 import * as C from '../modules/components.js';
 
 const { $, esc } = U;
 const state = { config: null, sha: null };
+
+// Partes de CONFIG que se editan desde acá.
+const EDITABLE = ["about", "areas", "contact", "socials", "newsletter"];
+const pick = src => Object.fromEntries(EDITABLE.filter(k => src?.[k] !== undefined).map(k => [k, src[k]]));
+let rawEvents = [];
 
 /* ==== HELPERS ==== */
 const clone = v => JSON.parse(JSON.stringify(v ?? null));
@@ -69,6 +75,7 @@ async function loadConfig() {
     if (!data.config) throw new Error("El servidor no devolvió la configuración.");
     state.config = data.config;
     state.sha = data.sha;
+    applyConfig();
     renderSections();
     return true;
   } catch (err) {
@@ -90,6 +97,7 @@ async function saveConfig(next, message, form = null) {
     const data = await api("config", { method: "PUT", body: { config: next, sha: state.sha, message } });
     state.config = data.config;
     state.sha = data.sha;
+    applyConfig();
     renderSections();
     toast("Guardado. El sitio se actualiza en un minuto.");
     return true;
@@ -103,6 +111,14 @@ async function saveConfig(next, message, form = null) {
     if (form) setError(form, err.message); else toast(err.message, true);
     return false;
   }
+}
+
+// El CONFIG que importó la página es el del último deploy; lo guardado en GitHub puede ser más nuevo.
+// Se actualiza en memoria para que el resto del panel (por ejemplo el selector de áreas) lo vea.
+function applyConfig() {
+  Object.assign(CONFIG, pick(state.config));
+  U.setEvents(rawEvents);
+  document.dispatchEvent(new CustomEvent("config:changed"));
 }
 
 function renderSections() {
@@ -170,6 +186,12 @@ function createPreview(host) {
   function paint() {
     if (!root) return;
     root.innerHTML = html;
+    // Una imagen recién subida todavía no está publicada: se muestra la copia local.
+    root.querySelectorAll("img").forEach(img => {
+      const local = localImages.get(img.getAttribute("src"));
+      if (local) img.src = local;
+      img.addEventListener("load", fit, { once: true });
+    });
     fit();
   }
 
@@ -220,9 +242,65 @@ function preview(name, build) {
   previews[name].render(html);
 }
 
-function component(name) {
-  if (typeof C[name] !== "function") throw new Error(`components.js no exporta ${name}()`);
-  return C[name];
+// Dibuja con los mismos componentes que usa el sitio. Como esos componentes leen CONFIG y los
+// eventos, se les pone el borrador por un instante y se restaura lo guardado al terminar.
+function withDraft(draft, render) {
+  const saved = pick(CONFIG);
+  Object.assign(CONFIG, pick(state.config), draft);
+  U.setEvents(rawEvents);
+  try { return render(); } finally { Object.assign(CONFIG, saved); U.setEvents(rawEvents); }
+}
+
+/* ==== IMÁGENES ==== */
+const localImages = new Map();
+const MAX_SIDE = 1600;
+
+async function shrink(file) {
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#1E1712";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise(done => canvas.toBlob(done, "image/jpeg", 0.85));
+  if (!blob) throw new Error("No se pudo procesar la imagen.");
+  return blob;
+}
+
+const toDataUrl = blob => new Promise((done, fail) => {
+  const reader = new FileReader();
+  reader.onload = () => done(reader.result);
+  reader.onerror = () => fail(new Error("No se pudo leer la imagen."));
+  reader.readAsDataURL(blob);
+});
+
+async function onUpload(e) {
+  const picker = e.target.closest("[data-upload]");
+  const file = picker?.files?.[0];
+  if (!file) return;
+  const form = e.currentTarget;
+  const label = picker.closest("label")?.querySelector("span");
+  const text = label?.textContent;
+  if (label) label.textContent = "Subiendo…";
+  picker.disabled = true;
+  setError(form);
+  try {
+    const blob = await shrink(file);
+    const { path } = await api("upload", { method: "POST", body: { name: file.name, dataUrl: await toDataUrl(blob) } });
+    localImages.set(path, URL.createObjectURL(blob));
+    setVal(form, picker.dataset.upload, path);
+    form.dispatchEvent(new Event("input"));
+    toast("Imagen subida. Guardá para publicarla.");
+  } catch (err) {
+    setError(form, err.message);
+  } finally {
+    picker.value = "";
+    picker.disabled = false;
+    if (label) label.textContent = text;
+  }
 }
 
 /* ==== SOBRE MÍ ==== */
@@ -234,7 +312,7 @@ function readAbout(form) {
     navLabel: val(form, "aboutNavLabel"),
     title: val(form, "aboutTitle"),
     lead: val(form, "aboutLead"),
-    paragraphs: (form.elements.aboutParagraphs?.value ?? "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean),
+    paragraphs: (form.elements.aboutParagraphs?.value ?? "").split(/\n+/).map(p => p.trim()).filter(Boolean),
     quote: val(form, "aboutQuote"),
     image: { ...base.image, src: val(form, "aboutImage"), alt: val(form, "aboutImageAlt") }
   };
@@ -242,7 +320,7 @@ function readAbout(form) {
 
 function updateAboutPreview() {
   const form = $("#about-form");
-  if (form && state.config) preview("about", () => component("renderAbout")(readAbout(form)));
+  if (form && state.config) preview("about", () => withDraft({ about: readAbout(form) }, () => C.renderAbout(CONFIG.about)));
 }
 
 function openAboutDialog() {
@@ -317,9 +395,13 @@ function readArea(form) {
 function updateAreaPreview() {
   const form = $("#area-form");
   if (!form || !state.config) return;
-  // Se pasa la posición real del área para que respete la alternancia de diseño del sitio.
+  // El área se dibuja en su posición real (respeta la alternancia de diseño) y con sus eventos.
   const index = editingAreaIndex ?? state.config.areas.length;
-  preview("area", () => component("renderArea")(readArea(form), index));
+  preview("area", () => {
+    const areas = [...state.config.areas];
+    areas[index] = readArea(form);
+    return withDraft({ areas }, () => C.renderArea(CONFIG.areas[index], index));
+  });
 }
 
 function openAreaForm(index = null) {
@@ -409,19 +491,7 @@ function readContact(form) {
 function updateContactPreview() {
   const form = $("#contact-form");
   if (!form || !state.config) return;
-  preview("contact", () => {
-    const { contact, socials: list, newsletter } = readContact(form);
-    return `
-      <section id="${esc(contact.id || "contacto")}" class="section contact" data-nav>
-        <div class="container prose reveal">
-          <h2 class="h2">${esc(contact.title)}</h2>
-          <p>${esc(contact.text)}</p>
-          ${typeof U.divider === "function" ? U.divider() : ""}
-          ${component("renderSocials")(list)}
-          ${component("renderNewsletter")(newsletter)}
-        </div>
-      </section>`;
-  });
+  preview("contact", () => withDraft(readContact(form), () => C.renderContact(CONFIG.contact)));
 }
 
 function openContactDialog() {
@@ -521,9 +591,13 @@ function bind() {
   on("#contact-form", "submit", submitContact);
   on("#contact-form", "input", updateContactPreview);
 
+  on("#about-form", "change", onUpload);
+  on("#area-form", "change", onUpload);
+
   for (const name of ["about", "area", "contact"]) {
     on(`#${name}-form [data-cancel]`, "click", () => closeDialog(`#${name}-dialog`));
   }
+  on("#areas-dialog [data-cancel]", "click", () => closeDialog("#areas-dialog"));
 
   on("#areas-list", "click", onAreasListClick);
   on("#new-area", "click", () => openAreaForm());
@@ -542,5 +616,6 @@ let bound = false;
 export async function init() {
   if (!bound) { bind(); bound = true; }
   if (!state.config) listMessage("Cargando secciones…");
+  rawEvents = await fetch(U.EVENTS_URL, { cache: "no-cache" }).then(r => (r.ok ? r.json() : [])).catch(() => []);
   await loadConfig();
 }

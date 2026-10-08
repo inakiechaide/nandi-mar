@@ -5,10 +5,9 @@ const { send, allow, checkEnv, isJson, readJson } = require("./_lib/http");
 const { getSession } = require("./_lib/session");
 const { readFile, writeFile } = require("./_lib/github");
 const vm = require("vm");
-const fs = require("fs");
-const path = require("path");
 
 const CONFIG_PATH = "js/modules/config.js";
+const MAX_BYTES = 300 * 1024;
 const PREFIX = "export const CONFIG = ";
 
 const commitMessage = msg => `Config: ${String(msg || "actualización").replace(/[\r\n]+/g, " ").slice(0, 100)}`;
@@ -52,23 +51,12 @@ function normalizeConfig(raw) {
     if (!social || !social.name || !social.url || !social.icon) throw new Error(`Red social ${i + 1}: falta name, url o icon`);
   });
 
+  // Las imágenes van como archivo en img/ (o una URL), nunca incrustadas: un config.js de varios MB
+  // frena el sitio y GitHub deja de devolver su contenido por la API.
+  if (JSON.stringify(raw).includes('"data:')) throw new Error("Las imágenes no pueden ir en base64. Subilas con el botón «Subir imagen» o pegá una URL.");
+  if (Buffer.byteLength(JSON.stringify(raw)) > MAX_BYTES) throw new Error("La configuración es demasiado grande.");
+
   return raw;
-}
-
-// Solo sirve en desarrollo local (vercel dev). En producción el disco es de solo lectura
-// y el cambio llega con el deploy que dispara el commit.
-function writeLocal(text) {
-  try {
-    fs.writeFileSync(path.join(path.resolve(__dirname, ".."), CONFIG_PATH), text, "utf8");
-  } catch { /* esperado en producción */ }
-}
-
-function readLocal() {
-  try {
-    const fullPath = path.join(path.resolve(__dirname, ".."), CONFIG_PATH);
-    const text = fs.readFileSync(fullPath, "utf8");
-    return { sha: null, text };
-  } catch { return { sha: null, text: null }; }
 }
 
 module.exports = async (req, res) => {
@@ -77,17 +65,8 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === "GET") {
-      let { sha, text } = await readFile(CONFIG_PATH);
-      // Fallback a local en desarrollo si GitHub falla
-      if (!text) {
-        const local = readLocal();
-        if (local.text) {
-          text = local.text;
-          sha = local.sha;
-        } else {
-          return send(res, 404, { error: `No se encontró ${CONFIG_PATH} en el repositorio ni localmente` });
-        }
-      }
+      const { sha, text } = await readFile(CONFIG_PATH);
+      if (!text) return send(res, 404, { error: `No se encontró ${CONFIG_PATH} en el repositorio` });
       let config;
       try { config = parseConfig(text); } catch (err) { return send(res, 500, { error: `No se pudo leer ${CONFIG_PATH}: ${err.message}` }); }
       return send(res, 200, { sha, config });
@@ -108,7 +87,6 @@ module.exports = async (req, res) => {
     if (current.text === text) return send(res, 200, { sha: current.sha, config });
 
     const sha = await writeFile(CONFIG_PATH, text, body.sha || null, commitMessage(body.message));
-    writeLocal(text);
     send(res, 200, { sha, config });
   } catch (err) {
     if (err.status === 409 || err.status === 422) return send(res, 409, { error: "La configuración cambió mientras editabas. Se recargó, probá de nuevo." });
