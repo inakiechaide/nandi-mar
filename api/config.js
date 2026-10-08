@@ -63,14 +63,31 @@ function writeLocal(text) {
   } catch { /* esperado en producción */ }
 }
 
+function readLocal() {
+  try {
+    const fullPath = path.join(path.resolve(__dirname, ".."), CONFIG_PATH);
+    const text = fs.readFileSync(fullPath, "utf8");
+    return { sha: null, text };
+  } catch { return { sha: null, text: null }; }
+}
+
 module.exports = async (req, res) => {
   if (!allow(req, res, ["GET", "PUT"]) || !checkEnv(res)) return;
   if (!getSession(req)) return send(res, 401, { error: "Sesión vencida, volvé a ingresar" });
 
   try {
     if (req.method === "GET") {
-      const { sha, text } = await readFile(CONFIG_PATH);
-      if (!text) return send(res, 404, { error: `No se encontró ${CONFIG_PATH} en el repositorio` });
+      let { sha, text } = await readFile(CONFIG_PATH);
+      // Fallback a local en desarrollo si GitHub falla
+      if (!text) {
+        const local = readLocal();
+        if (local.text) {
+          text = local.text;
+          sha = local.sha;
+        } else {
+          return send(res, 404, { error: `No se encontró ${CONFIG_PATH} en el repositorio ni localmente` });
+        }
+      }
       let config;
       try { config = parseConfig(text); } catch (err) { return send(res, 500, { error: `No se pudo leer ${CONFIG_PATH}: ${err.message}` }); }
       return send(res, 200, { sha, config });
