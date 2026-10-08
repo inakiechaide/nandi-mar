@@ -68,6 +68,24 @@ $("#nav-sections").addEventListener("click", async () => {
   }
 });
 
+$("#sync-btn").addEventListener("click", async () => {
+  const btn = $("#sync-btn");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Sincronizando...";
+  try {
+    const data = await api("sync", { method: "POST" });
+    toast("✓ " + data.message);
+    // Recargar la página para que los cambios surtan efecto
+    setTimeout(() => window.location.reload(), 1500);
+  } catch (err) {
+    toast("Error al sincronizar: " + err.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+
 /* ==== LISTADO ==== */
 const isPastEvent = ev => toDate(ev.endDate || ev.date) < TODAY;
 

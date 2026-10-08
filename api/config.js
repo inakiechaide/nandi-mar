@@ -1,51 +1,66 @@
+// api/config.js
+// Única fuente de verdad: js/modules/config.js (el mismo archivo que importa el sitio).
+// Un guardado = un commit = un deploy.
 const { send, allow, checkEnv, isJson, readJson } = require("./_lib/http");
 const { getSession } = require("./_lib/session");
 const { readFile, writeFile } = require("./_lib/github");
+const vm = require("vm");
+const fs = require("fs");
+const path = require("path");
 
-const CONFIG_JSON_PATH = "data/config.json";
-const CONFIG_JS_PATH = "js/modules/config.js";
+const CONFIG_PATH = "js/modules/config.js";
+const PREFIX = "export const CONFIG = ";
 
 const commitMessage = msg => `Config: ${String(msg || "actualización").replace(/[\r\n]+/g, " ").slice(0, 100)}`;
+const serialize = config => `${PREFIX}${JSON.stringify(config, null, 2)};\n`;
+const hasOtherExports = text => /^\s*export\s+(?!const\s+CONFIG\b)/m.test(text);
 
-function configToJS(config) {
-  return `export const CONFIG = ${JSON.stringify(config, null, 2)};\n`;
+// Lee CONFIG del módulo. Si lo escribió este endpoint es JSON puro; si todavía es el
+// archivo escrito a mano (claves sin comillas, comillas simples, comentarios) se evalúa
+// aislado en un contexto vacío.
+function parseConfig(text) {
+  const src = text.trim();
+  if (src.startsWith(PREFIX)) {
+    try { return JSON.parse(src.slice(PREFIX.length).replace(/;\s*$/, "")); } catch { /* escrito a mano */ }
+  }
+  if (!/^\s*export\s+const\s+CONFIG\b/m.test(src)) throw new Error("no exporta CONFIG");
+  const script = `${src.replace(/^\s*import\s.*$/gm, "").replace(/^(\s*)export\s+(default\s+)?/gm, "$1")}\n;CONFIG`;
+  const value = vm.runInNewContext(script, Object.create(null), { timeout: 500 });
+  return JSON.parse(JSON.stringify(value));
 }
 
 function normalizeConfig(raw) {
   if (!raw || typeof raw !== "object") throw new Error("El formato de config es inválido");
-
-  // Validar estructura básica
   if (!raw.site || typeof raw.site !== "object") throw new Error("Falta site");
   if (!raw.about || typeof raw.about !== "object") throw new Error("Falta about");
-  if (!raw.areas || !Array.isArray(raw.areas)) throw new Error("Falta areas");
+  if (!Array.isArray(raw.areas)) throw new Error("Falta areas");
   if (!raw.contact || typeof raw.contact !== "object") throw new Error("Falta contact");
-  if (!raw.socials || !Array.isArray(raw.socials)) throw new Error("Falta socials");
+  if (!Array.isArray(raw.socials)) throw new Error("Falta socials");
   if (!raw.newsletter || typeof raw.newsletter !== "object") throw new Error("Falta newsletter");
 
-  // Validar areas
   if (raw.areas.length === 0) throw new Error("Debe haber al menos un área");
-  for (let i = 0; i < raw.areas.length; i++) {
-    const area = raw.areas[i];
-    if (!area.id || !area.navLabel || !area.title) {
-      throw new Error(`Área ${i + 1}: falta id, navLabel o title`);
-    }
-    if (!area.offerings || !Array.isArray(area.offerings)) {
-      throw new Error(`Área ${i + 1}: falta offerings`);
-    }
-    if (!area.media || !Array.isArray(area.media)) {
-      throw new Error(`Área ${i + 1}: falta media`);
-    }
-  }
+  const ids = new Set();
+  raw.areas.forEach((area, i) => {
+    if (!area || !area.id || !area.navLabel || !area.title) throw new Error(`Área ${i + 1}: falta id, navLabel o title`);
+    if (ids.has(area.id)) throw new Error(`Área ${i + 1}: el id "${area.id}" está repetido`);
+    ids.add(area.id);
+    if (!Array.isArray(area.offerings)) throw new Error(`Área ${i + 1}: falta offerings`);
+    if (!Array.isArray(area.media)) throw new Error(`Área ${i + 1}: falta media`);
+  });
 
-  // Validar socials
-  for (let i = 0; i < raw.socials.length; i++) {
-    const social = raw.socials[i];
-    if (!social.name || !social.url || !social.icon) {
-      throw new Error(`Red social ${i + 1}: falta name, url o icon`);
-    }
-  }
+  raw.socials.forEach((social, i) => {
+    if (!social || !social.name || !social.url || !social.icon) throw new Error(`Red social ${i + 1}: falta name, url o icon`);
+  });
 
   return raw;
+}
+
+// Solo sirve en desarrollo local (vercel dev). En producción el disco es de solo lectura
+// y el cambio llega con el deploy que dispara el commit.
+function writeLocal(text) {
+  try {
+    fs.writeFileSync(path.join(path.resolve(__dirname, ".."), CONFIG_PATH), text, "utf8");
+  } catch { /* esperado en producción */ }
 }
 
 module.exports = async (req, res) => {
@@ -54,33 +69,10 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === "GET") {
-      // Intentar leer del JSON primero, si no existe, leer del JS
-      let config = null;
-      let sha = null;
-
-      try {
-        const data = await readFile(CONFIG_JSON_PATH);
-        if (data.text) {
-          config = JSON.parse(data.text);
-          sha = data.sha;
-        }
-      } catch (err) {
-        // Si no existe el JSON, intentar leer del JS
-        try {
-          const jsData = await readFile(CONFIG_JS_PATH);
-          if (jsData.text) {
-            // Extraer CONFIG del JS
-            const match = jsData.text.match(/export const CONFIG\s*=\s*({[\s\S]*?});/);
-            if (match) {
-              config = JSON.parse(match[1].trim());
-              sha = jsData.sha;
-            }
-          }
-        } catch (jsErr) {
-          console.error("Error reading JS config:", jsErr);
-        }
-      }
-
+      const { sha, text } = await readFile(CONFIG_PATH);
+      if (!text) return send(res, 404, { error: `No se encontró ${CONFIG_PATH} en el repositorio` });
+      let config;
+      try { config = parseConfig(text); } catch (err) { return send(res, 500, { error: `No se pudo leer ${CONFIG_PATH}: ${err.message}` }); }
       return send(res, 200, { sha, config });
     }
 
@@ -91,24 +83,18 @@ module.exports = async (req, res) => {
     let config;
     try { config = normalizeConfig(body.config); } catch (err) { return send(res, 400, { error: err.message }); }
 
-    // Guardar en ambos archivos: JSON y JS
-    const jsonText = `${JSON.stringify(config, null, 2)}\n`;
-    const jsText = configToJS(config);
-
-    // Primero guardar el JSON
-    const jsonSha = await writeFile(CONFIG_JSON_PATH, jsonText, body.sha || null, commitMessage(body.message));
-
-    // Luego guardar el JS (usando el sha del JSON como base para evitar conflictos)
-    try {
-      await writeFile(CONFIG_JS_PATH, jsText, null, commitMessage(`${body.message} (JS)`));
-    } catch (jsErr) {
-      console.error("Error saving JS config:", jsErr);
-      // No fallar si no se puede guardar el JS, el JSON es lo importante
+    const text = serialize(config);
+    const current = await readFile(CONFIG_PATH);
+    if (current.text && hasOtherExports(current.text)) {
+      return send(res, 400, { error: `${CONFIG_PATH} exporta otras cosas además de CONFIG; movelas a otro módulo antes de editar desde el panel.` });
     }
+    if (current.text === text) return send(res, 200, { sha: current.sha, config });
 
-    send(res, 200, { sha: jsonSha, config });
+    const sha = await writeFile(CONFIG_PATH, text, body.sha || null, commitMessage(body.message));
+    writeLocal(text);
+    send(res, 200, { sha, config });
   } catch (err) {
-    if (err.status === 409 || err.status === 422) return send(res, 409, { error: "El config cambió mientras editabas. Se recargó, probá de nuevo." });
+    if (err.status === 409 || err.status === 422) return send(res, 409, { error: "La configuración cambió mientras editabas. Se recargó, probá de nuevo." });
     console.error(err);
     send(res, 502, { error: `No se pudo hablar con GitHub: ${err.message}` });
   }

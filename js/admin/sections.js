@@ -1,10 +1,33 @@
-import { $, esc } from '../modules/utils.js';
+// js/admin/sections.js
+import * as U from '../modules/utils.js';
+import * as C from '../modules/components.js';
 
+const { $, esc } = U;
 const state = { config: null, sha: null };
+
+/* ==== HELPERS ==== */
+const clone = v => JSON.parse(JSON.stringify(v ?? null));
+const val = (form, name) => (form.elements[name]?.value ?? "").trim();
+const setVal = (form, name, v) => { const el = form.elements[name]; if (el) el.value = v ?? ""; };
+const setError = (form, text = "") => { const el = form && $("[data-error]", form); if (el) el.textContent = text; };
+const openDialog = sel => { const d = $(sel); if (d && !d.open) d.showModal(); return d; };
+const closeDialog = sel => { const d = $(sel); if (d?.open) d.close(); };
+
+// Si falta un elemento en el HTML avisa por consola en vez de romper todo el módulo.
+function on(sel, type, fn) {
+  const el = $(sel);
+  if (!el) { console.warn(`[secciones] Falta en admin.html: ${sel}`); return; }
+  el.addEventListener(type, fn);
+}
+
+const trimRows = rows => rows
+  .map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])))
+  .filter(r => Object.values(r).some(v => v !== "" && v != null));
 
 let toastTimer;
 function toast(text, error = false) {
   const el = $("#toast");
+  if (!el) return;
   el.textContent = text;
   el.className = `admin__toast is-on${error ? " is-error" : ""}`;
   clearTimeout(toastTimer);
@@ -27,613 +50,497 @@ async function api(path, { method = "GET", body } = {}) {
   return data;
 }
 
+async function busy(form, fn) {
+  const btn = $('button[type="submit"]', form);
+  const label = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+  try { return await fn(); } finally { if (btn) { btn.disabled = false; btn.textContent = label; } }
+}
+
+/* ==== CARGA Y GUARDADO ==== */
+function listMessage(text) {
+  const list = $("#sections-list");
+  if (list) list.innerHTML = `<li class="admin__empty">${esc(text)}</li>`;
+}
+
 async function loadConfig() {
   try {
-    console.log("Checking session...");
-    await api("session");
-    console.log("Session valid, loading config...");
     const data = await api("config");
-    console.log("Config loaded:", data);
+    if (!data.config) throw new Error("El servidor no devolvió la configuración.");
     state.config = data.config;
     state.sha = data.sha;
     renderSections();
+    return true;
   } catch (err) {
-    console.error("Error loading config:", err);
+    console.error("[secciones] Error al cargar config:", err);
     if (err.status === 401) {
-      toast("Sesión vencida, volvé a ingresar", true);
-      window.location.reload();
+      toast(err.message, true);
+      setTimeout(() => window.location.reload(), 1200);
     } else {
-      toast(`Error: ${err.message}`, true);
+      if (!state.config) listMessage(err.message);
+      toast(err.message, true);
     }
+    return false;
   }
 }
 
-async function saveConfig(message, errorEl = null) {
+// Guarda `next` y recién si el servidor lo acepta lo pasa a ser el estado actual.
+async function saveConfig(next, message, form = null) {
   try {
-    const data = await api("config", { method: "PUT", body: { config: state.config, sha: state.sha, message } });
+    const data = await api("config", { method: "PUT", body: { config: next, sha: state.sha, message } });
     state.config = data.config;
     state.sha = data.sha;
+    renderSections();
     toast("Guardado. El sitio se actualiza en un minuto.");
     return true;
   } catch (err) {
     if (err.status === 401) {
-      toast("Sesión vencida, volvé a ingresar", true);
-      window.location.reload();
+      toast(err.message, true);
+      setTimeout(() => window.location.reload(), 1200);
       return false;
     }
-    if (err.status === 409) await loadConfig().catch(() => {});
-    if (errorEl) errorEl.textContent = err.message; else toast(err.message, true);
+    if (err.status === 409) await loadConfig();
+    if (form) setError(form, err.message); else toast(err.message, true);
     return false;
   }
 }
 
 function renderSections() {
-  console.log("renderSections called, config:", state.config);
-  if (!state.config) {
-    console.error("No config available");
-    return;
-  }
-
-  const container = $("#sections-list");
-  if (!container) {
-    console.error("sections-list not found");
-    return;
-  }
-
-  console.log("Rendering sections");
-  container.innerHTML = `
-    <li class="admin__section-item" data-section="about">
-      <h3>Sobre mí</h3>
-      <p class="admin__meta">Información personal, lead, párrafos y quote</p>
-      <button class="btn btn--ghost btn--sm" type="button" data-edit-about>Editar</button>
+  const list = $("#sections-list");
+  if (!list || !state.config) return;
+  const areas = state.config.areas || [];
+  list.innerHTML = `
+    <li class="admin__section-item">
+      <div><h3>Sobre mí</h3><p class="admin__meta">Título, lead, párrafos, cita e imagen</p></div>
+      <span class="admin__btns"><button class="btn btn--ghost btn--sm" type="button" data-edit-about>Editar</button></span>
     </li>
-    <li class="admin__section-item" data-section="areas">
-      <h3>Áreas</h3>
-      <p class="admin__meta">${state.config.areas.length} áreas: ${state.config.areas.map(a => esc(a.navLabel)).join(", ")}</p>
-      <button class="btn btn--ghost btn--sm" type="button" data-edit-areas>Editar</button>
+    <li class="admin__section-item">
+      <div><h3>Áreas</h3><p class="admin__meta">${areas.length} áreas: ${areas.map(a => esc(a.navLabel ?? "")).join(", ")}</p></div>
+      <span class="admin__btns"><button class="btn btn--ghost btn--sm" type="button" data-edit-areas>Editar</button></span>
     </li>
-    <li class="admin__section-item" data-section="contact">
-      <h3>Contacto y redes</h3>
-      <p class="admin__meta">Información de contacto, redes sociales y newsletter</p>
-      <button class="btn btn--ghost btn--sm" type="button" data-edit-contact>Editar</button>
-    </li>
-  `;
-  console.log("Sections rendered");
+    <li class="admin__section-item">
+      <div><h3>Contacto y redes</h3><p class="admin__meta">Texto de contacto, redes sociales y newsletter</p></div>
+      <span class="admin__btns"><button class="btn btn--ghost btn--sm" type="button" data-edit-contact>Editar</button></span>
+    </li>`;
 }
 
-$("#sections-list").addEventListener("click", async e => {
-  if (e.target.closest("[data-edit-about]")) openAboutDialog();
-  if (e.target.closest("[data-edit-areas]")) openAreasDialog();
-  if (e.target.closest("[data-edit-contact]")) openContactDialog();
-});
+/* ==== VISTA PREVIA ====
+   Cada vista previa es un iframe que carga las mismas hojas de estilo que el sitio
+   (sin admin.css) y se dibuja a ancho real de escritorio o de celular, escalado para
+   entrar en el panel. Así los media queries y las fuentes se comportan como en la web. */
+const VIEWPORTS = { desktop: 1280, mobile: 390 };
+const PREVIEW_CSS = "html{scroll-behavior:auto}body{display:flow-root;overflow:hidden}.reveal{opacity:1!important;transform:none!important}";
 
-/* ==== ABOUT DIALOG ==== */
-function openAboutDialog() {
-  const dialog = $("#about-dialog");
-  const form = $("#about-form");
-  if (!dialog || !form) {
-    console.error("Dialog or form not found");
-    return;
-  }
-  const about = state.config.about;
-
-  form.reset();
-  form.elements.aboutId.value = about.id || "";
-  form.elements.aboutNavLabel.value = about.navLabel || "";
-  form.elements.aboutTitle.value = about.title || "";
-  form.elements.aboutLead.value = about.lead || "";
-  form.elements.aboutQuote.value = about.quote || "";
-  form.elements.aboutImage.value = about.image?.src || "";
-  form.elements.aboutImageAlt.value = about.image?.alt || "";
-
-  form.elements.aboutParagraphs.value = (about.paragraphs || []).join("\n");
-
-  $("[data-error]", form).textContent = "";
-  dialog.showModal();
-  updateAboutPreview();
-
-  // Agregar listener al botón cancelar dinámicamente
-  const cancelBtn = form.querySelector('[data-cancel]');
-  if (cancelBtn) {
-    cancelBtn.onclick = () => dialog.close();
-  }
+function siteHead() {
+  const links = [...document.querySelectorAll('link[rel~="stylesheet"],link[rel~="preconnect"]')]
+    .filter(l => !/admin[^/]*\.css/i.test(l.getAttribute("href") || ""))
+    .map(l => `<link rel="${l.rel}" href="${l.href}"${l.hasAttribute("crossorigin") ? " crossorigin" : ""}>`);
+  const styles = [...document.querySelectorAll("style")].map(s => `<style>${s.textContent}</style>`);
+  return [...links, ...styles].join("");
 }
 
-$("#about-form").addEventListener("submit", async e => {
-  e.preventDefault();
-  const form = e.target;
-  const paragraphs = form.elements.aboutParagraphs.value.split("\n\n").filter(p => p.trim());
+function createPreview(host) {
+  let mode = "desktop", doc = null, root = null, html = "", timer;
 
-  state.config.about = {
-    id: form.elements.aboutId.value.trim(),
-    navLabel: form.elements.aboutNavLabel.value.trim(),
-    title: form.elements.aboutTitle.value.trim(),
-    lead: form.elements.aboutLead.value.trim(),
-    paragraphs: paragraphs,
-    quote: form.elements.aboutQuote.value.trim(),
-    image: {
-      src: form.elements.aboutImage.value.trim(),
-      alt: form.elements.aboutImageAlt.value.trim()
+  host.className = "admin__preview-content";
+  host.innerHTML = `
+    <div class="admin__preview-bar" role="group" aria-label="Tamaño de la vista previa">
+      <button type="button" class="btn btn--ghost btn--sm" data-vp="desktop" aria-pressed="true">Escritorio</button>
+      <button type="button" class="btn btn--ghost btn--sm" data-vp="mobile" aria-pressed="false">Móvil</button>
+    </div>
+    <div class="admin__frame"></div>`;
+  const wrap = $(".admin__frame", host);
+  const frame = document.createElement("iframe");
+  frame.title = "Vista previa";
+  frame.tabIndex = -1;
+  frame.setAttribute("scrolling", "no");
+
+  function fit() {
+    const vw = VIEWPORTS[mode], avail = wrap.clientWidth;
+    if (!avail) return;
+    const scale = Math.min(1, avail / vw);
+    frame.style.width = `${vw}px`;
+    const h = doc ? doc.body.offsetHeight : 0;
+    frame.style.height = `${h}px`;
+    frame.style.transform = `scale(${scale})`;
+    frame.style.left = `${Math.max(0, (avail - vw * scale) / 2)}px`;
+    wrap.style.height = `${Math.ceil(h * scale)}px`;
+  }
+
+  function paint() {
+    if (!root) return;
+    root.innerHTML = html;
+    fit();
+  }
+
+  frame.addEventListener("load", () => {
+    const d = frame.contentDocument;
+    if (!d?.getElementById("root")) return;
+    doc = d;
+    root = d.getElementById("root");
+    d.addEventListener("click", e => e.preventDefault(), true);
+    d.addEventListener("submit", e => e.preventDefault(), true);
+    new frame.contentWindow.ResizeObserver(fit).observe(d.body);
+    paint();
+  });
+
+  frame.srcdoc = `<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="${location.origin}/">${siteHead()}<style>${PREVIEW_CSS}</style></head><body><main id="root"></main></body></html>`;
+  wrap.append(frame);
+  new ResizeObserver(fit).observe(wrap);
+
+  host.addEventListener("click", e => {
+    const btn = e.target.closest("[data-vp]");
+    if (!btn) return;
+    mode = btn.dataset.vp;
+    host.querySelectorAll("[data-vp]").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+    fit();
+  });
+
+  return {
+    render(next) {
+      html = next;
+      clearTimeout(timer);
+      timer = setTimeout(paint, 120);
     }
   };
+}
 
-  const ok = await saveConfig("Edición 'Sobre mí'", $("[data-error]", form));
-  if (ok) {
-    dialog.close();
-    renderSections();
+const previews = {};
+function preview(name, build) {
+  const host = $(`#${name}-preview`);
+  if (!host) return;
+  previews[name] ??= createPreview(host);
+  let html;
+  try {
+    html = build();
+  } catch (err) {
+    console.error(`[secciones] Vista previa "${name}":`, err);
+    html = `<p style="padding:2rem;color:#E39A70">No se pudo generar la vista previa: ${esc(err.message)}</p>`;
   }
-});
+  previews[name].render(html);
+}
 
-$("#about-form [data-cancel]").addEventListener("click", () => $("#about-dialog").close());
+function component(name) {
+  if (typeof C[name] !== "function") throw new Error(`components.js no exporta ${name}()`);
+  return C[name];
+}
 
-// Live preview for about form
-$("#about-form").addEventListener("input", updateAboutPreview);
+/* ==== SOBRE MÍ ==== */
+function readAbout(form) {
+  const base = state.config.about || {};
+  return {
+    ...base,
+    id: val(form, "aboutId"),
+    navLabel: val(form, "aboutNavLabel"),
+    title: val(form, "aboutTitle"),
+    lead: val(form, "aboutLead"),
+    paragraphs: (form.elements.aboutParagraphs?.value ?? "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean),
+    quote: val(form, "aboutQuote"),
+    image: { ...base.image, src: val(form, "aboutImage"), alt: val(form, "aboutImageAlt") }
+  };
+}
 
 function updateAboutPreview() {
   const form = $("#about-form");
-  const preview = $("#about-preview");
-  if (!form || !preview) return;
-
-  const paragraphs = form.elements.aboutParagraphs.value.split("\n").filter(p => p.trim());
-  const about = {
-    title: form.elements.aboutTitle.value.trim() || "Título",
-    lead: form.elements.aboutLead.value.trim() || "Lead...",
-    paragraphs: paragraphs.length ? paragraphs : ["Párrafo de ejemplo"],
-    quote: form.elements.aboutQuote.value.trim() || "Quote de ejemplo",
-    image: {
-      src: form.elements.aboutImage.value.trim(),
-      alt: form.elements.aboutImageAlt.value.trim() || "Imagen"
-    }
-  };
-
-  preview.innerHTML = `
-    <div class="preview-section">
-      <h2>${esc(about.title)}</h2>
-      <p class="preview-lead">${esc(about.lead)}</p>
-      ${about.image?.src ? `<img src="${esc(about.image.src)}" alt="${esc(about.image.alt)}" style="max-width:100%;border-radius:8px;margin:20px 0;">` : '<div style="background:var(--c-earth-3);border-radius:8px;margin:20px 0;padding:40px;text-align:center;color:var(--c-mute)">Sin imagen</div>'}
-      ${about.paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}
-      <blockquote class="preview-quote">${esc(about.quote)}</blockquote>
-    </div>
-  `;
+  if (form && state.config) preview("about", () => component("renderAbout")(readAbout(form)));
 }
 
-/* ==== AREAS DIALOG ==== */
+function openAboutDialog() {
+  const form = $("#about-form");
+  if (!form) return console.error("[secciones] Falta #about-form");
+  const about = state.config.about || {};
+  form.reset();
+  setVal(form, "aboutId", about.id);
+  setVal(form, "aboutNavLabel", about.navLabel);
+  setVal(form, "aboutTitle", about.title);
+  setVal(form, "aboutLead", about.lead);
+  setVal(form, "aboutQuote", about.quote);
+  setVal(form, "aboutImage", about.image?.src);
+  setVal(form, "aboutImageAlt", about.image?.alt);
+  setVal(form, "aboutParagraphs", (about.paragraphs || []).join("\n\n"));
+  setError(form);
+  openDialog("#about-dialog");
+  updateAboutPreview();
+}
+
+async function submitAbout(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const next = clone(state.config);
+  next.about = readAbout(form);
+  const ok = await busy(form, () => saveConfig(next, "edición Sobre mí", form));
+  if (ok) closeDialog("#about-dialog");
+}
+
+/* ==== ÁREAS ==== */
 let editingAreaIndex = null;
+let offerings, media, socials;
 
-function openAreasDialog() {
-  const dialog = $("#areas-dialog");
+function renderAreasList() {
   const list = $("#areas-list");
-  if (!dialog || !list) {
-    console.error("Dialog or list not found");
-    return;
-  }
-
+  if (!list) return;
   list.innerHTML = state.config.areas.map((area, index) => `
     <li class="admin__area-item">
-      <span>${esc(area.navLabel)}</span>
+      <span>${esc(area.navLabel ?? "")}</span>
       <div class="admin__btns">
         <button class="btn btn--ghost btn--sm" type="button" data-edit-area="${index}">Editar</button>
         <button class="btn btn--danger btn--sm" type="button" data-delete-area="${index}">Borrar</button>
       </div>
-    </li>
-  `).join("");
-
-  dialog.showModal();
+    </li>`).join("");
 }
 
-function openAreaForm(index = null) {
-  const dialog = $("#area-dialog");
-  const form = $("#area-form");
-  if (!dialog || !form) {
-    console.error("Dialog or form not found");
-    return;
-  }
-  editingAreaIndex = index;
-
-  const area = index === null ? { id: "", navLabel: "", title: "", accent: "ocre", subtitle: "", description: "", image: { src: "", alt: "" }, offerings: [], media: [] } : state.config.areas[index];
-
-  form.reset();
-  form.elements.areaId.value = area.id || "";
-  form.elements.areaNavLabel.value = area.navLabel || "";
-  form.elements.areaTitle.value = area.title || "";
-  form.elements.areaAccent.value = area.accent || "ocre";
-  form.elements.areaSubtitle.value = area.subtitle || "";
-  form.elements.areaDescription.value = area.description || "";
-  form.elements.areaImage.value = area.image?.src || "";
-  form.elements.areaImageAlt.value = area.image?.alt || "";
-
-  areaOfferings = [...(area.offerings || [])];
-  areaMedia = [...(area.media || [])];
-
-  renderOfferingsList();
-  renderMediaList();
-  updateAccentPicker(form.elements.areaAccent.value);
-
-  $("[data-title]", form).textContent = index === null ? "Nueva área" : "Editar área";
-  $("[data-error]", form).textContent = "";
-  dialog.showModal();
-  updateAreaPreview();
-
-  // Agregar listener al botón cancelar dinámicamente
-  const cancelBtn = form.querySelector('[data-cancel]');
-  if (cancelBtn) {
-    cancelBtn.onclick = () => dialog.close();
-  }
+function openAreasDialog() {
+  renderAreasList();
+  openDialog("#areas-dialog");
 }
 
-$("#area-form").addEventListener("submit", async e => {
-  e.preventDefault();
-  const form = e.target;
+function updateAccentPicker(color) {
+  $("#accent-picker")?.querySelectorAll("[data-color]").forEach(opt => opt.classList.toggle("selected", opt.dataset.color === color));
+}
 
-  const area = {
-    id: form.elements.areaId.value.trim(),
-    navLabel: form.elements.areaNavLabel.value.trim(),
-    title: form.elements.areaTitle.value.trim(),
-    accent: form.elements.areaAccent.value,
-    subtitle: form.elements.areaSubtitle.value.trim(),
-    description: form.elements.areaDescription.value.trim(),
-    image: {
-      src: form.elements.areaImage.value.trim(),
-      alt: form.elements.areaImageAlt.value.trim()
-    },
-    offerings: areaOfferings,
-    media: areaMedia
+function readArea(form) {
+  const base = editingAreaIndex === null ? {} : state.config.areas[editingAreaIndex] || {};
+  return {
+    ...base,
+    id: val(form, "areaId"),
+    navLabel: val(form, "areaNavLabel"),
+    title: val(form, "areaTitle"),
+    accent: val(form, "areaAccent") || "ocre",
+    subtitle: val(form, "areaSubtitle"),
+    description: val(form, "areaDescription"),
+    image: { ...base.image, src: val(form, "areaImage"), alt: val(form, "areaImageAlt") },
+    offerings: trimRows(offerings.get()),
+    media: trimRows(media.get())
   };
-
-  const areas = [...state.config.areas];
-  if (editingAreaIndex === null) areas.push(area); else areas[editingAreaIndex] = area;
-
-  state.config.areas = areas;
-  const ok = await saveConfig(`${editingAreaIndex === null ? "Alta" : "Edición"} área "${area.navLabel}"`, $("[data-error]", form));
-  if (ok) {
-    dialog.close();
-    openAreasDialog();
-    renderSections();
-  }
-});
-
-// Live preview for area form
-$("#area-form").addEventListener("input", updateAreaPreview);
-
-// Accent color picker
-function updateAccentPicker(selectedColor) {
-  const picker = $("#accent-picker");
-  if (!picker) return;
-  picker.querySelectorAll(".admin__color-option").forEach(opt => {
-    opt.classList.toggle("selected", opt.dataset.color === selectedColor);
-  });
 }
-
-$("#accent-picker").addEventListener("click", e => {
-  if (e.target.dataset.color) {
-    const color = e.target.dataset.color;
-    $("#area-form [name=areaAccent]").value = color;
-    updateAccentPicker(color);
-    updateAreaPreview();
-  }
-});
 
 function updateAreaPreview() {
   const form = $("#area-form");
-  const preview = $("#area-preview");
-  if (!form || !preview) return;
-
-  const accent = form.elements.areaAccent.value || "ocre";
-  const accentColors = {
-    ocre: "var(--c-ocre-ink)",
-    terra: "var(--c-terra-ink)",
-    musgo: "var(--c-musgo-ink)",
-    selva: "var(--c-musgo-ink)"
-  };
-
-  const area = {
-    title: form.elements.areaTitle.value.trim() || "Título",
-    subtitle: form.elements.areaSubtitle.value.trim() || "Subtítulo",
-    description: form.elements.areaDescription.value.trim() || "Descripción...",
-    image: {
-      src: form.elements.areaImage.value.trim(),
-      alt: form.elements.areaImageAlt.value.trim() || "Imagen"
-    },
-    offerings: areaOfferings.length ? areaOfferings : [{ title: "Ofrecimiento de ejemplo", meta: "Meta", text: "Texto de ejemplo" }],
-    media: areaMedia.length ? areaMedia : [{ type: "spotify", title: "Media de ejemplo" }]
-  };
-
-  // Update preview container background
-  preview.className = "admin__preview-content admin__preview-content--" + accent;
-
-  preview.innerHTML = `
-    <div class="preview-section" style="border-left: 4px solid ${accentColors[accent]}">
-      <h2 style="color: ${accentColors[accent]}">${esc(area.title)}</h2>
-      <p class="preview-subtitle">${esc(area.subtitle)}</p>
-      ${area.image?.src ? `<img src="${esc(area.image.src)}" alt="${esc(area.image.alt)}">` : '<div style="background:var(--c-earth-3);border-radius:var(--r-md);margin:var(--s-6) 0;padding:var(--s-8);text-align:center;color:var(--c-mute)">Sin imagen</div>'}
-      <p>${esc(area.description)}</p>
-      <h3 style="color: ${accentColors[accent]}">Offerings</h3>
-      <ul>
-        ${area.offerings.map(o => `<li><strong>${esc(o.title)}</strong> — ${esc(o.meta)}<br>${esc(o.text)}</li>`).join("")}
-      </ul>
-      <h3 style="color: ${accentColors[accent]}">Media</h3>
-      <ul>
-        ${area.media.map(m => `<li>${esc(m.type)}: ${esc(m.title)}</li>`).join("")}
-      </ul>
-    </div>
-  `;
+  if (!form || !state.config) return;
+  // Se pasa la posición real del área para que respete la alternancia de diseño del sitio.
+  const index = editingAreaIndex ?? state.config.areas.length;
+  preview("area", () => component("renderArea")(readArea(form), index));
 }
 
-$("#areas-list").addEventListener("click", async e => {
-  const edit = e.target.closest("[data-edit-area]");
-  if (edit) {
-    $("#areas-dialog").close();
-    openAreaForm(Number(edit.dataset.editArea));
-  }
-  const del = e.target.closest("[data-delete-area]");
-  if (del) {
-    const index = Number(del.dataset.deleteArea);
-    const area = state.config.areas[index];
-    if (!confirm(`¿Borrar "${area.navLabel}"?`)) return;
-    state.config.areas = state.config.areas.filter((_, i) => i !== index);
-    const ok = await saveConfig(`Baja área "${area.navLabel}"`);
-    if (ok) {
-      openAreasDialog();
-      renderSections();
-    }
-  }
-});
-
-$("#new-area").addEventListener("click", () => openAreaForm());
-
-/* ==== CONTACT DIALOG ==== */
-let contactSocials = [];
-
-function openContactDialog() {
-  const dialog = $("#contact-dialog");
-  const form = $("#contact-form");
-  if (!dialog || !form) {
-    console.error("Dialog or form not found");
-    return;
-  }
-  const contact = state.config.contact;
-  const socials = state.config.socials;
-  const newsletter = state.config.newsletter;
+function openAreaForm(index = null) {
+  const form = $("#area-form");
+  if (!form) return console.error("[secciones] Falta #area-form");
+  editingAreaIndex = index;
+  const area = index === null ? { accent: "ocre" } : state.config.areas[index];
 
   form.reset();
-  form.elements.contactId.value = contact.id || "";
-  form.elements.contactNavLabel.value = contact.navLabel || "";
-  form.elements.contactTitle.value = contact.title || "";
-  form.elements.contactText.value = contact.text || "";
+  setVal(form, "areaId", area.id);
+  setVal(form, "areaNavLabel", area.navLabel);
+  setVal(form, "areaTitle", area.title);
+  setVal(form, "areaAccent", area.accent || "ocre");
+  setVal(form, "areaSubtitle", area.subtitle);
+  setVal(form, "areaDescription", area.description);
+  setVal(form, "areaImage", area.image?.src);
+  setVal(form, "areaImageAlt", area.image?.alt);
+  offerings.set(area.offerings || []);
+  media.set(area.media || []);
+  updateAccentPicker(val(form, "areaAccent"));
 
-  contactSocials = [...socials];
-  renderSocialsList();
-
-  form.elements.newsletterEmail.value = newsletter.email || "";
-  form.elements.newsletterTitle.value = newsletter.title || "";
-  form.elements.newsletterLabel.value = newsletter.label || "";
-  form.elements.newsletterPlaceholder.value = newsletter.placeholder || "";
-  form.elements.newsletterButton.value = newsletter.button || "";
-  form.elements.newsletterSending.value = newsletter.sending || "";
-  form.elements.newsletterSuccess.value = newsletter.success || "";
-  form.elements.newsletterError.value = newsletter.error || "";
-  form.elements.newsletterNote.value = newsletter.note || "";
-
-  $("[data-error]", form).textContent = "";
-  dialog.showModal();
-  updateContactPreview();
-
-  // Agregar listener al botón cancelar dinámicamente
-  const cancelBtn = form.querySelector('[data-cancel]');
-  if (cancelBtn) {
-    cancelBtn.onclick = () => dialog.close();
-  }
+  const title = $("[data-title]", form);
+  if (title) title.textContent = index === null ? "Nueva área" : "Editar área";
+  setError(form);
+  closeDialog("#areas-dialog");
+  openDialog("#area-dialog");
+  updateAreaPreview();
 }
 
-$("#contact-form").addEventListener("submit", async e => {
+async function submitArea(e) {
   e.preventDefault();
-  const form = e.target;
+  const form = e.currentTarget;
+  const area = readArea(form);
+  if (!area.id || !area.navLabel || !area.title) return setError(form, "Completá ID, etiqueta de navegación y título.");
+  if (state.config.areas.some((a, i) => a.id === area.id && i !== editingAreaIndex)) return setError(form, `Ya existe un área con el ID "${area.id}".`);
 
-  state.config.contact = {
-    id: form.elements.contactId.value.trim(),
-    navLabel: form.elements.contactNavLabel.value.trim(),
-    title: form.elements.contactTitle.value.trim(),
-    text: form.elements.contactText.value.trim()
+  const next = clone(state.config);
+  if (editingAreaIndex === null) next.areas.push(area); else next.areas[editingAreaIndex] = area;
+  const message = `${editingAreaIndex === null ? "alta" : "edición"} área "${area.navLabel}"`;
+  const ok = await busy(form, () => saveConfig(next, message, form));
+  if (ok) closeDialog("#area-dialog"); // al cerrarse vuelve sola a la lista de áreas
+}
+
+async function onAreasListClick(e) {
+  const edit = e.target.closest("[data-edit-area]");
+  if (edit) return openAreaForm(Number(edit.dataset.editArea));
+  const del = e.target.closest("[data-delete-area]");
+  if (!del) return;
+  const index = Number(del.dataset.deleteArea);
+  const area = state.config.areas[index];
+  if (state.config.areas.length <= 1) return toast("Tiene que quedar al menos un área.", true);
+  if (!confirm(`¿Borrar "${area.navLabel}"?`)) return;
+  const next = clone(state.config);
+  next.areas.splice(index, 1);
+  del.disabled = true;
+  await saveConfig(next, `baja área "${area.navLabel}"`);
+  renderAreasList();
+}
+
+/* ==== CONTACTO ==== */
+function readContact(form) {
+  const base = state.config.newsletter || {};
+  return {
+    contact: {
+      ...state.config.contact,
+      id: val(form, "contactId"),
+      navLabel: val(form, "contactNavLabel"),
+      title: val(form, "contactTitle"),
+      text: val(form, "contactText")
+    },
+    socials: trimRows(socials.get()),
+    newsletter: {
+      ...base,
+      email: val(form, "newsletterEmail"),
+      title: val(form, "newsletterTitle"),
+      label: val(form, "newsletterLabel"),
+      placeholder: val(form, "newsletterPlaceholder"),
+      button: val(form, "newsletterButton"),
+      sending: val(form, "newsletterSending"),
+      success: val(form, "newsletterSuccess"),
+      error: val(form, "newsletterError"),
+      note: val(form, "newsletterNote")
+    }
   };
-
-  state.config.socials = contactSocials;
-
-  state.config.newsletter = {
-    email: form.elements.newsletterEmail.value.trim(),
-    title: form.elements.newsletterTitle.value.trim(),
-    label: form.elements.newsletterLabel.value.trim(),
-    placeholder: form.elements.newsletterPlaceholder.value.trim(),
-    button: form.elements.newsletterButton.value.trim(),
-    sending: form.elements.newsletterSending.value.trim(),
-    success: form.elements.newsletterSuccess.value.trim(),
-    error: form.elements.newsletterError.value.trim(),
-    note: form.elements.newsletterNote.value.trim()
-  };
-
-  const ok = await saveConfig("Edición 'Contacto y redes'", $("[data-error]", form));
-  if (ok) {
-    dialog.close();
-    renderSections();
-  }
-});
-
-$("#contact-form [data-cancel]").addEventListener("click", () => $("#contact-dialog").close());
-
-// Live preview for contact form
-$("#contact-form").addEventListener("input", updateContactPreview);
+}
 
 function updateContactPreview() {
   const form = $("#contact-form");
-  const preview = $("#contact-preview");
-  if (!form || !preview) return;
-
-  const contact = {
-    title: form.elements.contactTitle.value.trim() || "Título",
-    text: form.elements.contactText.value.trim() || "Texto de contacto..."
-  };
-
-  const newsletter = {
-    title: form.elements.newsletterTitle.value.trim() || "Newsletter",
-    label: form.elements.newsletterLabel.value.trim() || "Email",
-    placeholder: form.elements.newsletterPlaceholder.value.trim() || "tu@email.com",
-    button: form.elements.newsletterButton.value.trim() || "Suscribirme",
-    note: form.elements.newsletterNote.value.trim() || "Nota de ejemplo"
-  };
-
-  preview.innerHTML = `
-    <div class="preview-section">
-      <h2>${esc(contact.title)}</h2>
-      <p>${esc(contact.text)}</p>
-      <h3>Redes sociales</h3>
-      <ul>
-        ${contactSocials.map(s => `<li>${esc(s.name)}: <a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a></li>`).join("") || "<li>Sin redes sociales</li>"}
-      </ul>
-      <h3>Newsletter</h3>
-      <div style="background:var(--c-earth-3);padding:var(--s-4);border-radius:var(--r-sm)">
-        <h4>${esc(newsletter.title)}</h4>
-        <label style="display:block;margin:var(--s-2)0">${esc(newsletter.label)}</label>
-        <input type="email" placeholder="${esc(newsletter.placeholder)}" style="width:100%;padding:var(--s-2);margin-bottom:var(--s-2);border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-earth);color:var(--c-cream)">
-        <button style="padding:var(--s-2) var(--s-4);background:var(--c-ocre);border:none;border-radius:var(--r-sm);color:var(--c-earth-2);cursor:pointer">${esc(newsletter.button)}</button>
-        <p style="margin-top:var(--s-2);font-size:var(--fs-sm);color:var(--c-mute)">${esc(newsletter.note)}</p>
-      </div>
-    </div>
-  `;
+  if (!form || !state.config) return;
+  preview("contact", () => {
+    const { contact, socials: list, newsletter } = readContact(form);
+    return `
+      <section id="${esc(contact.id || "contacto")}" class="section contact" data-nav>
+        <div class="container prose reveal">
+          <h2 class="h2">${esc(contact.title)}</h2>
+          <p>${esc(contact.text)}</p>
+          ${typeof U.divider === "function" ? U.divider() : ""}
+          ${component("renderSocials")(list)}
+          ${component("renderNewsletter")(newsletter)}
+        </div>
+      </section>`;
+  });
 }
 
-// Socials list management
-function renderSocialsList() {
-  const list = $("#socials-list");
-  if (!list) return;
+function openContactDialog() {
+  const form = $("#contact-form");
+  if (!form) return console.error("[secciones] Falta #contact-form");
+  const contact = state.config.contact || {};
+  const newsletter = state.config.newsletter || {};
 
-  list.innerHTML = contactSocials.map((social, index) => `
-    <div class="admin__item-row">
-      <input type="text" placeholder="Nombre" value="${esc(social.name)}" data-social-index="${index}" data-social-field="name">
-      <input type="text" placeholder="URL" value="${esc(social.url)}" data-social-index="${index}" data-social-field="url">
-      <input type="text" placeholder="Icono" value="${esc(social.icon)}" data-social-index="${index}" data-social-field="icon">
-      <button class="btn btn--danger btn--sm" type="button" data-remove-social="${index}">✕</button>
-    </div>
-  `).join("");
-}
-
-$("#socials-list").addEventListener("input", e => {
-  if (e.target.dataset.socialIndex !== undefined) {
-    const index = Number(e.target.dataset.socialIndex);
-    const field = e.target.dataset.socialField;
-    contactSocials[index][field] = e.target.value.trim();
-    updateContactPreview();
+  form.reset();
+  setVal(form, "contactId", contact.id);
+  setVal(form, "contactNavLabel", contact.navLabel);
+  setVal(form, "contactTitle", contact.title);
+  setVal(form, "contactText", contact.text);
+  socials.set(state.config.socials || []);
+  for (const key of ["email", "title", "label", "placeholder", "button", "sending", "success", "error", "note"]) {
+    setVal(form, `newsletter${key[0].toUpperCase()}${key.slice(1)}`, newsletter[key]);
   }
-});
-
-$("#socials-list").addEventListener("click", e => {
-  if (e.target.dataset.removeSocial !== undefined) {
-    const index = Number(e.target.dataset.removeSocial);
-    contactSocials = contactSocials.filter((_, i) => i !== index);
-    renderSocialsList();
-    updateContactPreview();
-  }
-});
-
-$("#add-social").addEventListener("click", () => {
-  contactSocials.push({ name: "", url: "", icon: "" });
-  renderSocialsList();
+  setError(form);
+  openDialog("#contact-dialog");
   updateContactPreview();
-});
-
-// Offerings list management
-let areaOfferings = [];
-
-function renderOfferingsList() {
-  const list = $("#offerings-list");
-  if (!list) return;
-
-  list.innerHTML = areaOfferings.map((offering, index) => `
-    <div class="admin__item-row">
-      <input type="text" placeholder="Título" value="${esc(offering.title)}" data-offering-index="${index}" data-offering-field="title">
-      <input type="text" placeholder="Meta" value="${esc(offering.meta)}" data-offering-index="${index}" data-offering-field="meta">
-      <button class="btn btn--danger btn--sm" type="button" data-remove-offering="${index}">✕</button>
-      <textarea placeholder="Texto" rows="2" data-offering-index="${index}" data-offering-field="text">${esc(offering.text)}</textarea>
-    </div>
-  `).join("");
 }
 
-$("#offerings-list").addEventListener("input", e => {
-  if (e.target.dataset.offeringIndex !== undefined) {
-    const index = Number(e.target.dataset.offeringIndex);
-    const field = e.target.dataset.offeringField;
-    areaOfferings[index][field] = e.target.value.trim();
-    updateAreaPreview();
-  }
-});
-
-$("#offerings-list").addEventListener("click", e => {
-  if (e.target.dataset.removeOffering !== undefined) {
-    const index = Number(e.target.dataset.removeOffering);
-    areaOfferings = areaOfferings.filter((_, i) => i !== index);
-    renderOfferingsList();
-    updateAreaPreview();
-  }
-});
-
-$("#add-offering").addEventListener("click", () => {
-  areaOfferings.push({ title: "", meta: "", text: "" });
-  renderOfferingsList();
-  updateAreaPreview();
-});
-
-// Media list management
-let areaMedia = [];
-
-function renderMediaList() {
-  const list = $("#media-list");
-  if (!list) return;
-
-  list.innerHTML = areaMedia.map((media, index) => `
-    <div class="admin__item-row" style="grid-template-columns:repeat(3,1fr) auto">
-      <input type="text" placeholder="Tipo" value="${esc(media.type)}" data-media-index="${index}" data-media-field="type">
-      <input type="text" placeholder="Título" value="${esc(media.title)}" data-media-index="${index}" data-media-field="title">
-      <input type="text" placeholder="URL" value="${esc(media.url)}" data-media-index="${index}" data-media-field="url">
-      <button class="btn btn--danger btn--sm" type="button" data-remove-media="${index}">✕</button>
-      <input type="text" placeholder="Kind" value="${esc(media.kind)}" data-media-index="${index}" data-media-field="kind">
-      <input type="text" placeholder="Embed" value="${esc(media.embed)}" data-media-index="${index}" data-media-field="embed">
-      <input type="text" placeholder="Tone" value="${esc(media.tone)}" data-media-index="${index}" data-media-field="tone">
-    </div>
-  `).join("");
+async function submitContact(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const data = readContact(form);
+  if (data.socials.some(s => !s.name || !s.url || !s.icon)) return setError(form, "Cada red social necesita nombre, URL e ícono.");
+  const next = { ...clone(state.config), ...data };
+  const ok = await busy(form, () => saveConfig(next, "edición Contacto y redes", form));
+  if (ok) closeDialog("#contact-dialog");
 }
 
-$("#media-list").addEventListener("input", e => {
-  if (e.target.dataset.mediaIndex !== undefined) {
-    const index = Number(e.target.dataset.mediaIndex);
-    const field = e.target.dataset.mediaField;
-    areaMedia[index][field] = e.target.value.trim();
-    updateAreaPreview();
-  }
-});
+/* ==== LISTAS EDITABLES (ofrecimientos, media, redes) ==== */
+function rowEditor({ list, add, row, blank, onChange }) {
+  let rows = [];
+  const draw = () => { const el = $(list); if (el) el.innerHTML = rows.map(row).join(""); };
+  on(list, "input", e => {
+    const { index, field } = e.target.dataset;
+    if (field === undefined || !rows[index]) return;
+    rows[index][field] = e.target.value;
+    onChange();
+  });
+  on(list, "click", e => {
+    const btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    rows.splice(Number(btn.dataset.remove), 1);
+    draw();
+    onChange();
+  });
+  on(add, "click", () => { rows.push({ ...blank }); draw(); onChange(); });
+  return { get: () => rows, set: next => { rows = clone(next) || []; draw(); } };
+}
 
-$("#media-list").addEventListener("click", e => {
-  if (e.target.dataset.removeMedia !== undefined) {
-    const index = Number(e.target.dataset.removeMedia);
-    areaMedia = areaMedia.filter((_, i) => i !== index);
-    renderMediaList();
-    updateAreaPreview();
-  }
-});
-
-$("#add-media").addEventListener("click", () => {
-  areaMedia.push({ type: "", kind: "", title: "", url: "", embed: "", tone: "" });
-  renderMediaList();
-  updateAreaPreview();
-});
+const input = (row, index, field, placeholder) =>
+  `<input type="text" placeholder="${placeholder}" value="${esc(row[field] ?? "")}" data-index="${index}" data-field="${field}">`;
+const removeBtn = index => `<button class="btn btn--danger btn--sm" type="button" data-remove="${index}" aria-label="Quitar">✕</button>`;
 
 /* ==== INIT ==== */
-let initialized = false;
+function bind() {
+  on("#sections-list", "click", e => {
+    if (!state.config) return;
+    if (e.target.closest("[data-edit-about]")) openAboutDialog();
+    else if (e.target.closest("[data-edit-areas]")) openAreasDialog();
+    else if (e.target.closest("[data-edit-contact]")) openContactDialog();
+  });
 
-export async function init() {
-  console.log("sections.js init called, initialized:", initialized);
-  if (initialized) {
-    console.log("Already initialized, skipping");
-    return;
+  offerings = rowEditor({
+    list: "#offerings-list", add: "#add-offering", onChange: updateAreaPreview,
+    blank: { title: "", meta: "", text: "" },
+    row: (o, i) => `<div class="admin__item-row">
+      ${input(o, i, "title", "Título")}${input(o, i, "meta", "Meta")}${removeBtn(i)}
+      <textarea placeholder="Texto" rows="2" data-index="${i}" data-field="text" style="grid-column:1/-1">${esc(o.text ?? "")}</textarea>
+    </div>`
+  });
+
+  media = rowEditor({
+    list: "#media-list", add: "#add-media", onChange: updateAreaPreview,
+    blank: { type: "", kind: "", title: "", url: "", embed: "", tone: "" },
+    row: (m, i) => `<div class="admin__item-row" style="grid-template-columns:repeat(3,1fr) auto">
+      ${input(m, i, "type", "Tipo")}${input(m, i, "title", "Título")}${input(m, i, "url", "URL")}${removeBtn(i)}
+      ${input(m, i, "kind", "Kind")}${input(m, i, "embed", "Embed")}${input(m, i, "tone", "Tone")}
+    </div>`
+  });
+
+  socials = rowEditor({
+    list: "#socials-list", add: "#add-social", onChange: updateContactPreview,
+    blank: { name: "", url: "", icon: "" },
+    row: (s, i) => `<div class="admin__item-row" style="grid-template-columns:repeat(3,1fr) auto">
+      ${input(s, i, "name", "Nombre")}${input(s, i, "url", "URL")}${input(s, i, "icon", "Ícono")}${removeBtn(i)}
+    </div>`
+  });
+
+  on("#about-form", "submit", submitAbout);
+  on("#about-form", "input", updateAboutPreview);
+  on("#area-form", "submit", submitArea);
+  on("#area-form", "input", updateAreaPreview);
+  on("#contact-form", "submit", submitContact);
+  on("#contact-form", "input", updateContactPreview);
+
+  for (const name of ["about", "area", "contact"]) {
+    on(`#${name}-form [data-cancel]`, "click", () => closeDialog(`#${name}-dialog`));
   }
-  initialized = true;
-  console.log("Initializing sections module");
+
+  on("#areas-list", "click", onAreasListClick);
+  on("#new-area", "click", () => openAreaForm());
+  on("#area-dialog", "close", openAreasDialog);
+  on("#accent-picker", "click", e => {
+    const opt = e.target.closest("[data-color]");
+    const form = $("#area-form");
+    if (!opt || !form) return;
+    setVal(form, "areaAccent", opt.dataset.color);
+    updateAccentPicker(opt.dataset.color);
+    updateAreaPreview();
+  });
+}
+
+let bound = false;
+export async function init() {
+  if (!bound) { bind(); bound = true; }
+  if (!state.config) listMessage("Cargando secciones…");
   await loadConfig();
 }
