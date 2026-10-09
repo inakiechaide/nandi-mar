@@ -87,6 +87,11 @@
 .admin__image{display:flex;gap:var(--s-2);align-items:center}
 .admin__image input{flex:1;min-width:0}
 .admin__image .btn{flex:none;cursor:pointer}
+.admin__section--first{margin-top:0;padding-top:0;border-top:0}
+.admin__colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:var(--s-2) var(--s-4);margin-bottom:var(--s-4)}
+.admin__color{display:flex;align-items:center;gap:var(--s-3);font-size:var(--fs-sm);color:var(--c-cream-2);cursor:pointer}
+.admin__color input,.field input[type="color"]{flex:none;width:3rem;min-height:var(--tap);height:var(--tap);padding:var(--s-1);border-radius:var(--r-sm);border:var(--line-w) solid var(--c-line-strong);background:var(--c-earth);cursor:pointer}
+.field input[type="range"]{padding:0;border:0;background:none;accent-color:var(--c-ocre)}
 .admin__color-picker{display:flex;gap:var(--s-2);flex-wrap:wrap}
 .admin__color-option{width:32px;height:32px;border-radius:50%;border:2px solid var(--c-line);cursor:pointer;transition:all var(--t-fast)}
 .admin__color-option:hover{transform:scale(1.1)}

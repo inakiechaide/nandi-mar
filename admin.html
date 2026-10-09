@@ -89,6 +89,40 @@
   </form>
 </dialog>
 
+<dialog id="style-dialog" class="admin__dialog admin__dialog--xl">
+  <form id="style-form" method="dialog" novalidate>
+    <h2 class="admin__title">Estilos del sitio</h2>
+    <div class="admin__split">
+      <div class="admin__form-side">
+        <div class="admin__section admin__section--first">
+          <h3>Colores</h3>
+          <div id="theme-colors" class="admin__colors"></div>
+          <button type="button" class="btn btn--ghost btn--sm" id="theme-reset">Volver a los colores originales</button>
+        </div>
+        <div class="admin__section">
+          <h3>Portada</h3>
+          <div class="grid">
+            <div class="field field--wide"><span>Foto de portada</span><div data-image-field="heroImage"></div>
+              <small class="admin__meta">Sin foto se usa el degradado elegido abajo.</small></div>
+            <label class="field"><span>Degradado</span><select name="heroTone"></select></label>
+          </div>
+        </div>
+        <div data-bg="agenda"></div>
+        <p class="admin__meta">El fondo de Sobre mí, de cada área y de Contacto se cambia al editar esa sección.</p>
+      </div>
+      <div class="admin__preview-side">
+        <h3 class="admin__preview-title">Vista previa de toda la página</h3>
+        <div id="style-preview" class="admin__preview-content"></div>
+      </div>
+    </div>
+    <p class="admin__error" data-error></p>
+    <div class="admin__actions">
+      <button class="btn btn--ghost" type="button" data-cancel>Cancelar</button>
+      <button class="btn" type="submit" value="save">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="about-dialog" class="admin__dialog admin__dialog--xl">
   <form id="about-form" method="dialog" novalidate>
     <h2 class="admin__title">Editar "Sobre mí"</h2>
@@ -102,14 +136,12 @@
           <label class="field field--wide"><span>Párrafos (uno por línea)</span><textarea name="aboutParagraphs" rows="5"></textarea></label>
           <label class="field field--wide"><span>Quote</span><textarea name="aboutQuote" rows="2"></textarea></label>
           <div class="field field--wide"><span>Imagen</span>
-            <div class="admin__image">
-              <input name="aboutImage" placeholder="img/foto.jpg o https://…" aria-label="Ruta o URL de la imagen">
-              <label class="btn btn--ghost btn--sm"><span>Subir imagen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-upload="aboutImage" hidden></label>
-            </div>
+            <div data-image-field="aboutImage"></div>
             <small class="admin__meta">Se achica sola antes de subirse. Dejalo vacío para usar el fondo decorativo.</small>
           </div>
           <label class="field field--wide"><span>Alt de imagen</span><input name="aboutImageAlt"></label>
         </div>
+        <div data-bg="about"></div>
       </div>
       <div class="admin__preview-side">
         <h3 class="admin__preview-title">Vista previa</h3>
@@ -153,10 +185,7 @@
           <label class="field field--wide"><span>Subtítulo</span><input name="areaSubtitle"></label>
           <label class="field field--wide"><span>Descripción</span><textarea name="areaDescription" rows="4"></textarea></label>
           <div class="field field--wide"><span>Imagen</span>
-            <div class="admin__image">
-              <input name="areaImage" placeholder="img/foto.jpg o https://…" aria-label="Ruta o URL de la imagen">
-              <label class="btn btn--ghost btn--sm"><span>Subir imagen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-upload="areaImage" hidden></label>
-            </div>
+            <div data-image-field="areaImage"></div>
             <small class="admin__meta">Se achica sola antes de subirse. Dejalo vacío para usar el fondo decorativo.</small>
           </div>
           <label class="field field--wide"><span>Alt de imagen</span><input name="areaImageAlt"></label>
@@ -171,6 +200,7 @@
           <div id="media-list"></div>
           <button type="button" class="btn btn--ghost btn--sm admin__add-btn" id="add-media">+ Agregar media</button>
         </div>
+        <div data-bg="area"></div>
       </div>
       <div class="admin__preview-side">
         <h3 class="admin__preview-title">Vista previa</h3>
@@ -215,6 +245,7 @@
             <label class="field field--wide"><span>Nota</span><textarea name="newsletterNote" rows="2"></textarea></label>
           </div>
         </div>
+        <div data-bg="contact"></div>
       </div>
       <div class="admin__preview-side">
         <h3 class="admin__preview-title">Vista previa</h3>

@@ -7,8 +7,9 @@ const { $, esc } = U;
 const state = { config: null, sha: null };
 
 // Partes de CONFIG que se editan desde acá.
-const EDITABLE = ["about", "areas", "contact", "socials", "newsletter"];
-const pick = src => Object.fromEntries(EDITABLE.filter(k => src?.[k] !== undefined).map(k => [k, src[k]]));
+const EDITABLE = ["site", "theme", "about", "areas", "agenda", "contact", "socials", "newsletter"];
+const pick = src => Object.fromEntries(EDITABLE.map(k => [k, src?.[k]]));
+const sleep = ms => new Promise(done => setTimeout(done, ms));
 let rawEvents = [];
 
 /* ==== HELPERS ==== */
@@ -99,7 +100,8 @@ async function saveConfig(next, message, form = null) {
     state.sha = data.sha;
     applyConfig();
     renderSections();
-    toast("Guardado. El sitio se actualiza en un minuto.");
+    toast("Guardado. Publicando… te aviso cuando esté en el sitio.");
+    watchDeploy(data.config);
     return true;
   } catch (err) {
     if (err.status === 401) {
@@ -111,6 +113,20 @@ async function saveConfig(next, message, form = null) {
     if (form) setError(form, err.message); else toast(err.message, true);
     return false;
   }
+}
+
+// Espera a que el deploy termine: el sitio publicado pasa a servir exactamente lo que se guardó.
+let watching = 0;
+async function watchDeploy(config) {
+  const id = ++watching;
+  const want = `export const CONFIG = ${JSON.stringify(config, null, 2)};`;
+  for (let i = 0; i < 30; i++) {
+    await sleep(4000);
+    if (id !== watching) return;
+    const live = await fetch(`js/modules/config.js?t=${Date.now()}`, { cache: "no-store" }).then(r => r.text()).catch(() => "");
+    if (live.trim() === want) return toast("Publicado: el sitio ya muestra los cambios.");
+  }
+  toast("El guardado está hecho, pero el sitio todavía no lo muestra. Revisá el deploy en Vercel.", true);
 }
 
 // El CONFIG que importó la página es el del último deploy; lo guardado en GitHub puede ser más nuevo.
@@ -127,7 +143,11 @@ function renderSections() {
   const areas = state.config.areas || [];
   list.innerHTML = `
     <li class="admin__section-item">
-      <div><h3>Sobre mí</h3><p class="admin__meta">Título, lead, párrafos, cita e imagen</p></div>
+      <div><h3>Estilos</h3><p class="admin__meta">Colores del sitio, foto de portada y fondo de la agenda</p></div>
+      <span class="admin__btns"><button class="btn btn--ghost btn--sm" type="button" data-edit-style>Editar</button></span>
+    </li>
+    <li class="admin__section-item">
+      <div><h3>Sobre mí</h3><p class="admin__meta">Título, lead, párrafos, cita, imagen y fondo</p></div>
       <span class="admin__btns"><button class="btn btn--ghost btn--sm" type="button" data-edit-about>Editar</button></span>
     </li>
     <li class="admin__section-item">
@@ -135,7 +155,7 @@ function renderSections() {
       <span class="admin__btns"><button class="btn btn--ghost btn--sm" type="button" data-edit-areas>Editar</button></span>
     </li>
     <li class="admin__section-item">
-      <div><h3>Contacto y redes</h3><p class="admin__meta">Texto de contacto, redes sociales y newsletter</p></div>
+      <div><h3>Contacto y redes</h3><p class="admin__meta">Texto de contacto, redes sociales, newsletter y fondo</p></div>
       <span class="admin__btns"><button class="btn btn--ghost btn--sm" type="button" data-edit-contact>Editar</button></span>
     </li>`;
 }
@@ -145,7 +165,7 @@ function renderSections() {
    (sin admin.css) y se dibuja a ancho real de escritorio o de celular, escalado para
    entrar en el panel. Así los media queries y las fuentes se comportan como en la web. */
 const VIEWPORTS = { desktop: 1280, mobile: 390 };
-const PREVIEW_CSS = "html{scroll-behavior:auto}body{display:flow-root;overflow:hidden}.reveal{opacity:1!important;transform:none!important}";
+const PREVIEW_CSS = "html{scroll-behavior:auto}body{display:flow-root;position:relative;overflow:hidden}.reveal{opacity:1!important;transform:none!important}.nav{position:absolute}.hero{min-height:820px}.hero__content>*{animation:none!important}";
 
 function siteHead() {
   const links = [...document.querySelectorAll('link[rel~="stylesheet"],link[rel~="preconnect"]')]
@@ -156,7 +176,7 @@ function siteHead() {
 }
 
 function createPreview(host) {
-  let mode = "desktop", doc = null, root = null, html = "", timer;
+  let mode = "desktop", doc = null, root = null, html = "", theme = null, timer;
 
   host.className = "admin__preview-content";
   host.innerHTML = `
@@ -185,13 +205,12 @@ function createPreview(host) {
 
   function paint() {
     if (!root) return;
-    root.innerHTML = html;
     // Una imagen recién subida todavía no está publicada: se muestra la copia local.
-    root.querySelectorAll("img").forEach(img => {
-      const local = localImages.get(img.getAttribute("src"));
-      if (local) img.src = local;
-      img.addEventListener("load", fit, { once: true });
-    });
+    let markup = html;
+    localImages.forEach((local, path) => { markup = markup.replaceAll(path, local); });
+    root.innerHTML = markup;
+    U.applyTheme(theme, doc.documentElement);
+    root.querySelectorAll("img").forEach(img => img.addEventListener("load", fit, { once: true }));
     fit();
   }
 
@@ -219,8 +238,9 @@ function createPreview(host) {
   });
 
   return {
-    render(next) {
+    render(next, nextTheme) {
       html = next;
+      theme = nextTheme;
       clearTimeout(timer);
       timer = setTimeout(paint, 120);
     }
@@ -228,18 +248,22 @@ function createPreview(host) {
 }
 
 const previews = {};
-function preview(name, build) {
+// Dibuja `body()` con el borrador puesto, debajo de la barra de menú real y con los colores del tema.
+function preview(name, draft, body) {
   const host = $(`#${name}-preview`);
   if (!host) return;
   previews[name] ??= createPreview(host);
-  let html;
+  let html, theme = state.config?.theme;
   try {
-    html = build();
+    html = withDraft(draft, () => {
+      theme = CONFIG.theme;
+      return `<header class="nav nav--solid">${C.renderNav(U.navItems()).bar}</header>${body()}`;
+    });
   } catch (err) {
     console.error(`[secciones] Vista previa "${name}":`, err);
     html = `<p style="padding:2rem;color:#E39A70">No se pudo generar la vista previa: ${esc(err.message)}</p>`;
   }
-  previews[name].render(html);
+  previews[name].render(html, theme);
 }
 
 // Dibuja con los mismos componentes que usa el sitio. Como esos componentes leen CONFIG y los
@@ -249,6 +273,108 @@ function withDraft(draft, render) {
   Object.assign(CONFIG, pick(state.config), draft);
   U.setEvents(rawEvents);
   try { return render(); } finally { Object.assign(CONFIG, saved); U.setEvents(rawEvents); }
+}
+
+/* ==== FONDO DE SECCIÓN ==== */
+const BG_DEFAULT = { color: "#1E1712", tone: "selva", veil: 0.6 };
+const TONE_LABELS = { selva: "Selva", tierra: "Tierra", fuego: "Fuego", musgo: "Musgo" };
+const toneOptions = U.TONES.map(t => `<option value="${t}">${TONE_LABELS[t]}</option>`).join("");
+const uploadField = (name, label, placeholder = "img/foto.jpg o https://…") => `<div class="admin__image">
+    <input name="${name}" placeholder="${placeholder}" aria-label="${label}">
+    <label class="btn btn--ghost btn--sm"><span>Subir imagen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-upload="${name}" hidden></label>
+  </div>`;
+
+const bgFields = (p, title) => `<div class="admin__section">
+    <h3>${title}</h3>
+    <div class="grid">
+      <label class="field"><span>Tipo de fondo</span><select name="${p}BgType">
+        <option value="">El del diseño</option><option value="color">Color liso</option><option value="tone">Degradado</option><option value="image">Foto</option>
+      </select></label>
+      <label class="field" data-bg-for="color"><span>Color</span><input type="color" name="${p}BgColor"></label>
+      <label class="field" data-bg-for="tone"><span>Degradado</span><select name="${p}BgTone">${toneOptions}</select></label>
+      <div class="field field--wide" data-bg-for="image"><span>Foto de fondo</span>${uploadField(`${p}BgImage`, "Ruta o URL de la foto de fondo")}</div>
+      <label class="field field--wide" data-bg-for="image"><span>Velar la foto (para que el texto se lea)</span><input type="range" name="${p}BgVeil" min="0" max="0.9" step="0.05"></label>
+    </div>
+  </div>`;
+
+function setBg(form, p, bg) {
+  setVal(form, `${p}BgType`, bg?.type || "");
+  setVal(form, `${p}BgColor`, bg?.color || BG_DEFAULT.color);
+  setVal(form, `${p}BgTone`, bg?.tone || BG_DEFAULT.tone);
+  setVal(form, `${p}BgImage`, bg?.image || "");
+  setVal(form, `${p}BgVeil`, bg?.veil ?? BG_DEFAULT.veil);
+  syncBg(form);
+}
+
+function readBg(form, p) {
+  const type = val(form, `${p}BgType`);
+  if (type === "color") return { type, color: val(form, `${p}BgColor`) };
+  if (type === "tone") return { type, tone: val(form, `${p}BgTone`) };
+  if (type === "image") return { type, image: val(form, `${p}BgImage`), veil: Number(val(form, `${p}BgVeil`)) };
+  return undefined;
+}
+
+// Muestra solo los campos del tipo de fondo elegido.
+function syncBg(form) {
+  form.querySelectorAll("[data-bg]").forEach(box => {
+    const type = val(form, `${box.dataset.bg}BgType`);
+    box.querySelectorAll("[data-bg-for]").forEach(el => { el.hidden = el.dataset.bgFor !== type; });
+  });
+}
+
+/* ==== ESTILOS ==== */
+function readStyle(form) {
+  const colors = {};
+  for (const [key, { value }] of Object.entries(U.THEME_COLORS)) {
+    const picked = val(form, `color-${key}`);
+    if (picked && picked.toLowerCase() !== value.toLowerCase()) colors[key] = picked;
+  }
+  const { site = {}, agenda = {}, theme = {} } = state.config;
+  return {
+    theme: { ...theme, colors },
+    site: { ...site, hero: { ...site.hero, src: val(form, "heroImage"), tone: val(form, "heroTone") || "selva" } },
+    agenda: { ...agenda, background: readBg(form, "agenda") }
+  };
+}
+
+function updateStylePreview() {
+  const form = $("#style-form");
+  if (!form || !state.config) return;
+  syncBg(form);
+  preview("style", readStyle(form), () => [
+    C.renderHero(CONFIG.site),
+    C.renderAbout(CONFIG.about),
+    CONFIG.areas.map(C.renderArea).join(""),
+    C.renderAgenda(CONFIG.agenda),
+    C.renderContact(CONFIG.contact),
+    `<footer class="footer">${C.renderFooter(CONFIG.footer)}</footer>`
+  ].join(""));
+}
+
+function setColors(form, colors = {}) {
+  for (const [key, { value }] of Object.entries(U.THEME_COLORS)) setVal(form, `color-${key}`, colors[key] || value);
+}
+
+function openStyleDialog() {
+  const form = $("#style-form");
+  if (!form) return console.error("[secciones] Falta #style-form");
+  const hero = state.config.site?.hero || {};
+  form.reset();
+  setColors(form, state.config.theme?.colors);
+  setVal(form, "heroImage", hero.src);
+  setVal(form, "heroTone", hero.tone || "selva");
+  setBg(form, "agenda", state.config.agenda?.background);
+  setError(form);
+  openDialog("#style-dialog");
+  updateStylePreview();
+}
+
+async function submitStyle(e) {
+  e.preventDefault();
+  const form = e.currentTarget;
+  const next = { ...clone(state.config), ...readStyle(form) };
+  const ok = await busy(form, () => saveConfig(next, "edición Estilos", form));
+  if (ok) closeDialog("#style-dialog");
 }
 
 /* ==== IMÁGENES ==== */
@@ -314,13 +440,16 @@ function readAbout(form) {
     lead: val(form, "aboutLead"),
     paragraphs: (form.elements.aboutParagraphs?.value ?? "").split(/\n+/).map(p => p.trim()).filter(Boolean),
     quote: val(form, "aboutQuote"),
-    image: { ...base.image, src: val(form, "aboutImage"), alt: val(form, "aboutImageAlt") }
+    image: { ...base.image, src: val(form, "aboutImage"), alt: val(form, "aboutImageAlt") },
+    background: readBg(form, "about")
   };
 }
 
 function updateAboutPreview() {
   const form = $("#about-form");
-  if (form && state.config) preview("about", () => withDraft({ about: readAbout(form) }, () => C.renderAbout(CONFIG.about)));
+  if (!form || !state.config) return;
+  syncBg(form);
+  preview("about", { about: readAbout(form) }, () => C.renderAbout(CONFIG.about));
 }
 
 function openAboutDialog() {
@@ -336,6 +465,7 @@ function openAboutDialog() {
   setVal(form, "aboutImage", about.image?.src);
   setVal(form, "aboutImageAlt", about.image?.alt);
   setVal(form, "aboutParagraphs", (about.paragraphs || []).join("\n\n"));
+  setBg(form, "about", about.background);
   setError(form);
   openDialog("#about-dialog");
   updateAboutPreview();
@@ -388,7 +518,8 @@ function readArea(form) {
     description: val(form, "areaDescription"),
     image: { ...base.image, src: val(form, "areaImage"), alt: val(form, "areaImageAlt") },
     offerings: trimRows(offerings.get()),
-    media: trimRows(media.get())
+    media: trimRows(media.get()),
+    background: readBg(form, "area")
   };
 }
 
@@ -397,11 +528,10 @@ function updateAreaPreview() {
   if (!form || !state.config) return;
   // El área se dibuja en su posición real (respeta la alternancia de diseño) y con sus eventos.
   const index = editingAreaIndex ?? state.config.areas.length;
-  preview("area", () => {
-    const areas = [...state.config.areas];
-    areas[index] = readArea(form);
-    return withDraft({ areas }, () => C.renderArea(CONFIG.areas[index], index));
-  });
+  syncBg(form);
+  const areas = [...state.config.areas];
+  areas[index] = readArea(form);
+  preview("area", { areas }, () => C.renderArea(CONFIG.areas[index], index));
 }
 
 function openAreaForm(index = null) {
@@ -421,6 +551,7 @@ function openAreaForm(index = null) {
   setVal(form, "areaImageAlt", area.image?.alt);
   offerings.set(area.offerings || []);
   media.set(area.media || []);
+  setBg(form, "area", area.background);
   updateAccentPicker(val(form, "areaAccent"));
 
   const title = $("[data-title]", form);
@@ -470,7 +601,8 @@ function readContact(form) {
       id: val(form, "contactId"),
       navLabel: val(form, "contactNavLabel"),
       title: val(form, "contactTitle"),
-      text: val(form, "contactText")
+      text: val(form, "contactText"),
+      background: readBg(form, "contact")
     },
     socials: trimRows(socials.get()),
     newsletter: {
@@ -491,7 +623,8 @@ function readContact(form) {
 function updateContactPreview() {
   const form = $("#contact-form");
   if (!form || !state.config) return;
-  preview("contact", () => withDraft(readContact(form), () => C.renderContact(CONFIG.contact)));
+  syncBg(form);
+  preview("contact", readContact(form), () => C.renderContact(CONFIG.contact));
 }
 
 function openContactDialog() {
@@ -506,6 +639,7 @@ function openContactDialog() {
   setVal(form, "contactTitle", contact.title);
   setVal(form, "contactText", contact.text);
   socials.set(state.config.socials || []);
+  setBg(form, "contact", contact.background);
   for (const key of ["email", "title", "label", "placeholder", "button", "sending", "success", "error", "note"]) {
     setVal(form, `newsletter${key[0].toUpperCase()}${key.slice(1)}`, newsletter[key]);
   }
@@ -551,9 +685,18 @@ const removeBtn = index => `<button class="btn btn--danger btn--sm" type="button
 
 /* ==== INIT ==== */
 function bind() {
+  const titles = { about: "Fondo de la sección", area: "Fondo de la sección", contact: "Fondo de la sección", agenda: "Fondo de la agenda" };
+  document.querySelectorAll("[data-bg]").forEach(box => { box.innerHTML = bgFields(box.dataset.bg, titles[box.dataset.bg] || "Fondo"); });
+  document.querySelectorAll("[data-image-field]").forEach(box => { box.innerHTML = uploadField(box.dataset.imageField, "Ruta o URL de la imagen"); });
+  const palette = $("#theme-colors");
+  if (palette) palette.innerHTML = Object.entries(U.THEME_COLORS).map(([key, { label }]) => `<label class="admin__color"><input type="color" name="color-${key}"><span>${label}</span></label>`).join("");
+  const tone = $("#style-form [name=heroTone]");
+  if (tone) tone.innerHTML = toneOptions;
+
   on("#sections-list", "click", e => {
     if (!state.config) return;
-    if (e.target.closest("[data-edit-about]")) openAboutDialog();
+    if (e.target.closest("[data-edit-style]")) openStyleDialog();
+    else if (e.target.closest("[data-edit-about]")) openAboutDialog();
     else if (e.target.closest("[data-edit-areas]")) openAreasDialog();
     else if (e.target.closest("[data-edit-contact]")) openContactDialog();
   });
@@ -591,10 +734,12 @@ function bind() {
   on("#contact-form", "submit", submitContact);
   on("#contact-form", "input", updateContactPreview);
 
-  on("#about-form", "change", onUpload);
-  on("#area-form", "change", onUpload);
+  on("#style-form", "submit", submitStyle);
+  on("#style-form", "input", updateStylePreview);
+  on("#theme-reset", "click", () => { setColors($("#style-form")); updateStylePreview(); });
+  for (const name of ["style", "about", "area", "contact"]) on(`#${name}-form`, "change", onUpload);
 
-  for (const name of ["about", "area", "contact"]) {
+  for (const name of ["style", "about", "area", "contact"]) {
     on(`#${name}-form [data-cancel]`, "click", () => closeDialog(`#${name}-dialog`));
   }
   on("#areas-dialog [data-cancel]", "click", () => closeDialog("#areas-dialog"));

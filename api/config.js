@@ -51,6 +51,14 @@ function normalizeConfig(raw) {
     if (!social || !social.name || !social.url || !social.icon) throw new Error(`Red social ${i + 1}: falta name, url o icon`);
   });
 
+  const colors = raw.theme?.colors;
+  if (colors !== undefined) {
+    if (!colors || typeof colors !== "object" || Array.isArray(colors)) throw new Error("Los colores del tema son inválidos");
+    for (const [key, value] of Object.entries(colors)) {
+      if (!/^[a-z0-9-]{1,20}$/.test(key) || !/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(value))) throw new Error(`Color inválido: ${key}`);
+    }
+  }
+
   // Las imágenes van como archivo en img/ (o una URL), nunca incrustadas: un config.js de varios MB
   // frena el sitio y GitHub deja de devolver su contenido por la API.
   if (JSON.stringify(raw).includes('"data:')) throw new Error("Las imágenes no pueden ir en base64. Subilas con el botón «Subir imagen» o pegá una URL.");

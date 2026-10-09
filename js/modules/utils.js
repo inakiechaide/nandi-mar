@@ -17,6 +17,61 @@ export const isPast = ev => toDate(ev.endDate || ev.date) < TODAY;
 
 export const byDate = (a, b) => toDate(a.date) - toDate(b.date);
 
+/* ==== ESTILOS EDITABLES ==== */
+const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+export const TONES = ["selva", "tierra", "fuego", "musgo"];
+// Colores que se pueden cambiar desde el panel, con su valor original (el de styles.css).
+export const THEME_COLORS = {
+  earth: { label: "Fondo del sitio", value: "#1E1712" },
+  "earth-2": { label: "Fondo de tarjetas", value: "#271E17" },
+  cream: { label: "Texto", value: "#EFE4D2" },
+  "cream-2": { label: "Texto secundario", value: "#CFC2AC" },
+  ocre: { label: "Acento ocre (botones)", value: "#C9A15B" },
+  terra: { label: "Acento tierra", value: "#B5653A" },
+  musgo: { label: "Acento musgo", value: "#4F6B4A" },
+  jungle: { label: "Verde selva (fondos)", value: "#1F3A2E" }
+};
+
+// Cada color arrastra a sus derivados (líneas, tonos claros, velos) para que el conjunto siga combinando.
+const DERIVED = {
+  earth: c => ({ "--c-veil": `color-mix(in srgb,${c} 72%,transparent)`, "--c-veil-2": `color-mix(in srgb,${c} 90%,transparent)` }),
+  "earth-2": c => ({ "--c-earth-3": `color-mix(in srgb,${c} 88%,var(--c-cream))` }),
+  cream: c => ({ "--c-line": `color-mix(in srgb,${c} 12%,transparent)`, "--c-line-strong": `color-mix(in srgb,${c} 28%,transparent)`, "--c-mute": `color-mix(in srgb,${c} 62%,var(--c-earth))` }),
+  ocre: c => ({ "--c-ocre-ink": `color-mix(in srgb,${c} 72%,var(--c-cream))` }),
+  terra: c => ({ "--c-terra-ink": `color-mix(in srgb,${c} 62%,var(--c-cream))` }),
+  musgo: c => ({ "--c-musgo-ink": `color-mix(in srgb,${c} 50%,var(--c-cream))` }),
+  jungle: c => ({ "--c-jungle-deep": `color-mix(in srgb,${c} 72%,#000)` })
+};
+
+export function themeVars(theme) {
+  const vars = {};
+  for (const key of Object.keys(THEME_COLORS)) {
+    const color = theme?.colors?.[key];
+    if (!HEX.test(color || "") || color.toLowerCase() === THEME_COLORS[key].value.toLowerCase()) continue;
+    Object.assign(vars, { [`--c-${key}`]: color }, DERIVED[key]?.(color));
+  }
+  return vars;
+}
+
+export function applyTheme(theme, root = document.documentElement) {
+  (root.dataset.theme || "").split(" ").filter(Boolean).forEach(name => root.style.removeProperty(name));
+  const vars = themeVars(theme);
+  Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value));
+  root.dataset.theme = Object.keys(vars).join(" ");
+}
+
+// Fondo propio de una sección: color liso, degradado del sitio o foto con velo.
+export const bgStyle = bg => {
+  if (bg?.type === "color" && HEX.test(bg.color || "")) return `background:${bg.color}`;
+  if (bg?.type === "tone" && TONES.includes(bg.tone)) return `background:var(--motif),var(--grad-${bg.tone});background-size:240px,cover`;
+  if (bg?.type === "image" && bg.image) {
+    // El velo usa el color de fondo del sitio, así el texto se lee con cualquier paleta.
+    const veil = `color-mix(in srgb,var(--c-earth) ${Math.round(Math.min(1, Math.max(0, Number(bg.veil ?? 0.6) || 0)) * 100)}%,transparent)`;
+    return `background:linear-gradient(${veil},${veil}),url("${encodeURI(bg.image)}") center/cover no-repeat`;
+  }
+  return "";
+};
+
 export const accentStyle = area => `--accent:var(--c-${area.accent});--accent-ink:var(--c-${area.accent}-ink)`;
 
 export const EVENTS_URL = "data/events.json";

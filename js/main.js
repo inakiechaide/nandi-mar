@@ -1,5 +1,5 @@
 import { CONFIG } from './modules/config.js';
-import { $, icon, navItems, loadEvents } from './modules/utils.js';
+import { $, icon, navItems, loadEvents, applyTheme } from './modules/utils.js';
 import { renderNav, renderHero, renderAbout, renderArea, renderAgenda, renderContact, renderFooter } from './modules/components.js';
 import { initNav, initToTop } from './modules/nav.js';
 import { initReveal, initParallax } from './modules/scroll.js';
@@ -22,6 +22,7 @@ function mount() {
   $("#toTop").innerHTML = icon("up");
 }
 
+applyTheme(CONFIG.theme);
 await loadEvents();
 mount();
 initNav();

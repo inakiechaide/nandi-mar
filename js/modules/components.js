@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { esc, icon, renderImage, accentStyle, EVENTS, isPast, byDate, UI, divider, toDate, fmt, rangeLabel } from './utils.js';
+import { esc, icon, renderImage, accentStyle, bgStyle, EVENTS, isPast, byDate, UI, divider, toDate, fmt, rangeLabel } from './utils.js';
 
 export function renderNav(items) {
   const links = items.map(i => `<li><a class="nav__link" href="#${i.id}">${esc(i.label)}</a></li>`).join("");
@@ -25,7 +25,7 @@ export function renderHero(site) {
 }
 
 export function renderAbout(a) {
-  return `<section id="${a.id}" class="section" data-nav>
+  return `<section id="${a.id}" class="section" style="${esc(bgStyle(a.background))}" data-nav>
     <div class="container about__grid">
       <figure class="frame about__portrait reveal">${renderImage(a.image, 0.05)}</figure>
       <div class="prose reveal">
@@ -79,7 +79,7 @@ export function renderEvents(area) {
 }
 
 export function renderArea(area, index) {
-  return `<section id="${area.id}" class="section area${index % 2 ? " area--alt" : ""}" style="${accentStyle(area)}" data-nav>
+  return `<section id="${area.id}" class="section area${index % 2 ? " area--alt" : ""}" style="${esc([accentStyle(area), bgStyle(area.background)].filter(Boolean).join(";"))}" data-nav>
     <div class="container">
       <div class="area__intro">
         <div class="prose reveal">
@@ -104,7 +104,7 @@ export function renderAgendaList(filter = "all") {
 export function renderAgenda(a) {
   const chips = [`<button class="chip" type="button" data-filter="all" aria-pressed="true">${esc(a.allLabel)}</button>`,
     ...CONFIG.areas.map(ar => `<button class="chip" type="button" data-filter="${ar.id}" aria-pressed="false" style="${accentStyle(ar)}">${esc(ar.navLabel)}</button>`)].join("");
-  return `<section id="${a.id}" class="section agenda" data-nav>
+  return `<section id="${a.id}" class="section agenda" style="${esc(bgStyle(a.background))}" data-nav>
     <div class="container">
       <header class="section__head reveal"><h2 class="h2">${esc(a.title)}</h2><p class="lead">${esc(a.intro)}</p>${divider()}</header>
       <div class="chips reveal" role="group" aria-label="${esc(a.filterLabel)}">${chips}</div>
@@ -131,7 +131,7 @@ export function renderNewsletter(n) {
 }
 
 export function renderContact(c) {
-  return `<section id="${c.id}" class="section contact" data-nav>
+  return `<section id="${c.id}" class="section contact" style="${esc(bgStyle(c.background))}" data-nav>
     <div class="container prose reveal">
       <h2 class="h2">${esc(c.title)}</h2>
       <p>${esc(c.text)}</p>
