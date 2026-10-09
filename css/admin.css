@@ -84,7 +84,8 @@
 .admin__add-btn{margin-top:var(--s-3);width:100%;border:2px dashed var(--c-line);background:transparent}
 .admin__add-btn:hover{border-color:var(--c-ocre);color:var(--c-ocre)}
 .admin__remove-item{color:var(--c-terra-ink);border-color:var(--c-terra-ink)}
-.admin__image{display:flex;gap:var(--s-2);align-items:center}
+.admin__image{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center}
+.admin__image input{flex-basis:12rem}
 .admin__image input{flex:1;min-width:0}
 .admin__image .btn{flex:none;cursor:pointer}
 .admin__section--first{margin-top:0;padding-top:0;border-top:0}

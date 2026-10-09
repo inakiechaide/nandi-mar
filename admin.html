@@ -102,9 +102,11 @@
         <div class="admin__section">
           <h3>Portada</h3>
           <div class="grid">
-            <div class="field field--wide"><span>Foto de portada</span><div data-image-field="heroImage"></div>
-              <small class="admin__meta">Sin foto se usa el degradado elegido abajo.</small></div>
-            <label class="field"><span>Degradado</span><select name="heroTone"></select></label>
+            <label class="field"><span>Fondo de la portada</span><select name="heroType">
+              <option value="tone">Degradado (el del diseño)</option><option value="image">Foto</option>
+            </select></label>
+            <label class="field" data-hero-for="tone"><span>Degradado</span><select name="heroTone"></select></label>
+            <div class="field field--wide" data-hero-for="image"><span>Foto de portada</span><div data-image-field="heroImage"></div></div>
           </div>
         </div>
         <div data-bg="agenda"></div>

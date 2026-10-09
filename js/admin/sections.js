@@ -282,7 +282,15 @@ const toneOptions = U.TONES.map(t => `<option value="${t}">${TONE_LABELS[t]}</op
 const uploadField = (name, label, placeholder = "img/foto.jpg o https://…") => `<div class="admin__image">
     <input name="${name}" placeholder="${placeholder}" aria-label="${label}">
     <label class="btn btn--ghost btn--sm"><span>Subir imagen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-upload="${name}" hidden></label>
+    <button class="btn btn--ghost btn--sm" type="button" data-clear="${name}">Quitar</button>
   </div>`;
+
+function onClear(e) {
+  const btn = e.target.closest("[data-clear]");
+  if (!btn) return;
+  setVal(e.currentTarget, btn.dataset.clear, "");
+  e.currentTarget.dispatchEvent(new Event("input"));
+}
 
 const bgFields = (p, title) => `<div class="admin__section">
     <h3>${title}</h3>
@@ -332,7 +340,7 @@ function readStyle(form) {
   const { site = {}, agenda = {}, theme = {} } = state.config;
   return {
     theme: { ...theme, colors },
-    site: { ...site, hero: { ...site.hero, src: val(form, "heroImage"), tone: val(form, "heroTone") || "selva" } },
+    site: { ...site, hero: { ...site.hero, src: val(form, "heroType") === "image" ? val(form, "heroImage") : "", tone: val(form, "heroTone") || "selva" } },
     agenda: { ...agenda, background: readBg(form, "agenda") }
   };
 }
@@ -341,6 +349,7 @@ function updateStylePreview() {
   const form = $("#style-form");
   if (!form || !state.config) return;
   syncBg(form);
+  form.querySelectorAll("[data-hero-for]").forEach(el => { el.hidden = el.dataset.heroFor !== val(form, "heroType"); });
   preview("style", readStyle(form), () => [
     C.renderHero(CONFIG.site),
     C.renderAbout(CONFIG.about),
@@ -361,6 +370,7 @@ function openStyleDialog() {
   const hero = state.config.site?.hero || {};
   form.reset();
   setColors(form, state.config.theme?.colors);
+  setVal(form, "heroType", hero.src ? "image" : "tone");
   setVal(form, "heroImage", hero.src);
   setVal(form, "heroTone", hero.tone || "selva");
   setBg(form, "agenda", state.config.agenda?.background);
@@ -737,7 +747,10 @@ function bind() {
   on("#style-form", "submit", submitStyle);
   on("#style-form", "input", updateStylePreview);
   on("#theme-reset", "click", () => { setColors($("#style-form")); updateStylePreview(); });
-  for (const name of ["style", "about", "area", "contact"]) on(`#${name}-form`, "change", onUpload);
+  for (const name of ["style", "about", "area", "contact"]) {
+    on(`#${name}-form`, "change", onUpload);
+    on(`#${name}-form`, "click", onClear);
+  }
 
   for (const name of ["style", "about", "area", "contact"]) {
     on(`#${name}-form [data-cancel]`, "click", () => closeDialog(`#${name}-dialog`));
